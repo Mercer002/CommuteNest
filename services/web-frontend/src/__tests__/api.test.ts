@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fetchHealth, fetchUserPreferences, saveUserPreferences } from "../api.js";
+import { fetchHealth, fetchUserPreferences, saveUserPreferences, triggerScan } from "../api.js";
 
 describe("Web Frontend API Client", () => {
   beforeEach(() => {
@@ -78,6 +78,35 @@ describe("Web Frontend API Client", () => {
 
     expect(saved.userId).toBe("mercer");
     expect(saved.maxRentUsd).toBe(1700);
+  });
+
+  it("triggers scan via POST /scan", async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          matches: [
+            {
+              id: "listing-1",
+              title: "Modern 1BR",
+              priceUsd: 1650,
+              address: "100 King St W",
+              url: "https://example.com",
+              commuteMinutes: 12,
+              commuteSummary: "12 min to Union Station",
+              matchedAt: "2026-09-13T12:00:00.000Z",
+            },
+          ],
+          count: 1,
+          scannedAt: "2026-09-13T12:00:00.000Z",
+        },
+      }),
+    });
+
+    const result = await triggerScan("mercer", { maxRentUsd: 1800 });
+    expect(result.count).toBe(1);
+    expect(result.matches[0].title).toBe("Modern 1BR");
   });
 });
 

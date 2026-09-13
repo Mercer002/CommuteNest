@@ -77,4 +77,5 @@ export interface PipelineSummary {
   skippedCommute: number;
   alerted: number;
   errors: Array<{ listingId: string; message: string }>;
+  matches?: MatchedListing[];
 }

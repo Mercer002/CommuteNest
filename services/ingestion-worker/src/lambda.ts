@@ -35,6 +35,18 @@ export async function handler(event: unknown = {}): Promise<LambdaResult> {
 
   console.log("CommuteNest ingestion completed. Summary:", JSON.stringify(summary));
 
+  if (config.userPreferencesTableName && config.activeUserId && summary.matches && summary.matches.length > 0) {
+    try {
+      const preferencesStore = new DynamoDbPreferencesStore({
+        tableName: config.userPreferencesTableName,
+      });
+      await preferencesStore.saveRecentMatches(config.activeUserId, summary.matches);
+      console.log(`Saved ${summary.matches.length} recent match(es) to user '${config.activeUserId}' in DynamoDB.`);
+    } catch (err) {
+      console.warn(`Failed to save recent matches to DynamoDB: ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
   return {
     statusCode: 200,
     summary,

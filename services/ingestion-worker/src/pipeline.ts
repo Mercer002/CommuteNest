@@ -27,6 +27,7 @@ export async function runIngestionPipeline({
   await seenListingsStore.load();
 
   const listings = await scraper.scrape();
+  const matches: MatchedListing[] = [];
   const summary: PipelineSummary = {
     scraped: listings.length,
     skippedSeen: 0,
@@ -34,6 +35,7 @@ export async function runIngestionPipeline({
     skippedCommute: 0,
     alerted: 0,
     errors: [],
+    matches,
   };
 
   for (const listing of listings) {
@@ -57,6 +59,7 @@ export async function runIngestionPipeline({
 
       if (evaluation.matches) {
         const match: MatchedListing = { listing, commute };
+        matches.push(match);
         await alertSink.sendMatchAlert(match);
         summary.alerted += 1;
       } else {

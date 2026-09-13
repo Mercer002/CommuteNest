@@ -4,8 +4,9 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { UpdatePreferencesInput, UserPreferencesRecord } from "./types.js";
+import type { MatchedListingRecord, UpdatePreferencesInput, UserPreferencesRecord } from "./types.js";
 
 export interface DynamoDbDocClientLike {
   send(command: any): Promise<any>;
@@ -63,6 +64,8 @@ export class PreferencesRepository {
       transitMode: item.transit_mode,
       transitModes: item.transit_modes ?? ["bus", "subway", "train"],
       notificationEmail: item.notification_email,
+      recentMatches: item.recent_matches ?? [],
+      lastScanAt: item.last_scan_at,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     };
@@ -83,6 +86,8 @@ export class PreferencesRepository {
       transitMode: input.transitMode,
       transitModes: input.transitModes ?? ["bus", "subway", "train"],
       notificationEmail: input.notificationEmail,
+      recentMatches: existing?.recentMatches ?? [],
+      lastScanAt: existing?.lastScanAt,
       createdAt: existing ? existing.createdAt : now,
       updatedAt: now,
     };
@@ -98,6 +103,8 @@ export class PreferencesRepository {
           transit_mode: record.transitMode,
           transit_modes: record.transitModes,
           notification_email: record.notificationEmail,
+          recent_matches: record.recentMatches,
+          last_scan_at: record.lastScanAt,
           created_at: record.createdAt,
           updated_at: record.updatedAt,
         },
@@ -105,6 +112,25 @@ export class PreferencesRepository {
     );
 
     return record;
+  }
+
+  async saveRecentMatches(
+    userId: string,
+    matches: MatchedListingRecord[],
+  ): Promise<MatchedListingRecord[]> {
+    const now = new Date().toISOString();
+    await this.docClient.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: { user_id: userId },
+        UpdateExpression: "SET recent_matches = :matches, last_scan_at = :lastScanAt",
+        ExpressionAttributeValues: {
+          ":matches": matches,
+          ":lastScanAt": now,
+        },
+      }),
+    );
+    return matches;
   }
 
   async deletePreferences(userId: string): Promise<boolean> {

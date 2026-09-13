@@ -78,6 +78,18 @@ describe("API Gateway Handler", () => {
         target_destination: "Union Station, Toronto, ON",
         transit_mode: "transit",
         transit_modes: ["bus", "subway"],
+        recent_matches: [
+          {
+            id: "listing-1",
+            title: "Sunlit Studio",
+            priceUsd: 1650,
+            address: "100 King St W",
+            url: "https://example.com/1",
+            commuteMinutes: 12,
+            commuteSummary: "12 min to Union Station",
+            matchedAt: "2026-09-13T12:00:00.000Z",
+          },
+        ],
         created_at: "2026-09-13T12:00:00.000Z",
         updated_at: "2026-09-13T12:00:00.000Z",
       },
@@ -91,6 +103,33 @@ describe("API Gateway Handler", () => {
     expect(body.success).toBe(true);
     expect(body.data.userId).toBe("mercer");
     expect(body.data.maxRentUsd).toBe(1800);
+    expect(body.data.recentMatches.length).toBe(1);
+    expect(body.data.recentMatches[0].title).toBe("Sunlit Studio");
+  });
+
+  it("handles POST /preferences/{userId}/scan to trigger on-demand matching", async () => {
+    mockSend.mockResolvedValueOnce({
+      Item: {
+        user_id: "mercer",
+        max_rent_usd: 2000,
+        max_commute_minutes: 30,
+        target_destination: "Union Station, Toronto, ON",
+        transit_mode: "transit",
+      },
+    }).mockResolvedValueOnce({}); // saveRecentMatches
+
+    const event = createEvent("POST", "/preferences/mercer/scan", {
+      maxRentUsd: 1800,
+      maxCommuteMinutes: 25,
+    });
+
+    const response = (await handler(event)) as { statusCode: number; body: string };
+    expect(response.statusCode).toBe(200);
+
+    const body = JSON.parse(response.body);
+    expect(body.success).toBe(true);
+    expect(body.data.matches).toBeDefined();
+    expect(body.data.count).toBeGreaterThan(0);
   });
 
   it("handles GET /preferences/{userId} when not found with 404", async () => {

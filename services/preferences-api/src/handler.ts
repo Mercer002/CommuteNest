@@ -1,11 +1,12 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
+import { findMatchingListings } from "./matcher.js";
 import { PreferencesRepository } from "./repository.js";
 import type { ApiResponse } from "./types.js";
 import { validateUpdatePreferencesInput, validateUserId } from "./validator.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Content-Type": "application/json",
 };
@@ -59,14 +60,17 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     });
   }
 
-  // Match /preferences/{userId}
-  const match = path.match(/^\/preferences\/([^/]+)\/?$/);
-  const rawUserId = event.pathParameters?.userId ?? (match ? decodeURIComponent(match[1]) : undefined);
+  // Check for /preferences/{userId}/scan route
+  const scanMatch = path.match(/^\/preferences\/([^/]+)\/scan\/?$/);
+  const prefsMatch = path.match(/^\/preferences\/([^/]+)\/?$/);
+  const isScanRoute = Boolean(scanMatch);
+
+  const rawUserId = event.pathParameters?.userId ?? (scanMatch ? decodeURIComponent(scanMatch[1]) : (prefsMatch ? decodeURIComponent(prefsMatch[1]) : undefined));
 
   if (!rawUserId) {
     return jsonResponse(404, {
       success: false,
-      error: "Not Found. Available routes: GET /health, GET /preferences/{userId}, PUT /preferences/{userId}, DELETE /preferences/{userId}",
+      error: "Not Found. Available routes: GET /health, GET /preferences/{userId}, PUT /preferences/{userId}, POST /preferences/{userId}/scan, DELETE /preferences/{userId}",
     });
   }
 
@@ -82,14 +86,64 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   const repo = getRepository();
 
   try {
+    if (isScanRoute) {
+      let prefs = await repo.getPreferences(userId);
+      if (!prefs) {
+        prefs = {
+          userId,
+          maxRentUsd: 1800,
+          maxCommuteMinutes: 35,
+          targetDestination: "Union Station, Toronto, ON",
+          transitMode: "transit",
+          transitModes: ["bus", "subway", "train"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      if (event.body) {
+        try {
+          const rawBody = event.isBase64Encoded
+            ? Buffer.from(event.body, "base64").toString("utf-8")
+            : event.body;
+          const parsed = JSON.parse(rawBody || "{}");
+          if (parsed.maxRentUsd) prefs.maxRentUsd = Number(parsed.maxRentUsd);
+          if (parsed.maxCommuteMinutes) prefs.maxCommuteMinutes = Number(parsed.maxCommuteMinutes);
+          if (parsed.targetDestination) prefs.targetDestination = String(parsed.targetDestination);
+          if (parsed.transitMode) prefs.transitMode = parsed.transitMode;
+        } catch {
+          // Keep loaded preferences if body cannot be parsed
+        }
+      }
+
+      const matches = findMatchingListings(prefs);
+      await repo.saveRecentMatches(userId, matches);
+
+      return jsonResponse(200, {
+        success: true,
+        data: {
+          matches,
+          count: matches.length,
+          scannedAt: new Date().toISOString(),
+          preferences: prefs,
+        },
+      });
+    }
+
     switch (method) {
       case "GET": {
-        const record = await repo.getPreferences(userId);
+        let record = await repo.getPreferences(userId);
         if (!record) {
           return jsonResponse(404, {
             success: false,
             error: `Preferences for user '${userId}' not found.`,
           });
+        }
+        if (!record.recentMatches || record.recentMatches.length === 0) {
+          const initialMatches = findMatchingListings(record);
+          record.recentMatches = initialMatches;
+          record.lastScanAt = new Date().toISOString();
+          await repo.saveRecentMatches(userId, initialMatches);
         }
         return jsonResponse(200, {
           success: true,

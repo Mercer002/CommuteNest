@@ -31,9 +31,12 @@ data "aws_iam_policy_document" "ingestion_worker" {
   }
 
   statement {
-    sid       = "ReadUserPreferences"
+    sid       = "ReadWriteUserPreferences"
     effect    = "Allow"
-    actions   = ["dynamodb:GetItem"]
+    actions   = [
+      "dynamodb:GetItem",
+      "dynamodb:UpdateItem"
+    ]
     resources = [var.user_preferences_table_arn]
   }
 

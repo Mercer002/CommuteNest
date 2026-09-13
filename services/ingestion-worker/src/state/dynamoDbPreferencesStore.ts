@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-import type { UserPreferences } from "../types.js";
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import type { MatchedListing, UserPreferences } from "../types.js";
 
 export interface DynamoDbPreferencesStoreOptions {
   tableName: string;
@@ -53,6 +53,33 @@ export class DynamoDbPreferencesStore {
       transitMode: item.transit_mode,
       transitModes: item.transit_modes ?? ["bus", "subway", "train"],
     };
+  }
+
+  async saveRecentMatches(userId: string, matches: MatchedListing[]): Promise<void> {
+    const formattedMatches = matches.slice(0, 25).map((m) => ({
+      id: m.listing.id,
+      title: m.listing.title,
+      priceUsd: m.listing.priceUsd,
+      address: m.listing.address,
+      url: m.listing.url,
+      commuteMinutes: m.commute.durationMinutes,
+      commuteSummary: m.commute.distanceText || `${m.commute.durationMinutes} mins`,
+      matchedAt: new Date().toISOString(),
+    }));
+
+    await this.docClient.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          user_id: userId,
+        },
+        UpdateExpression: "SET recent_matches = :matches, last_scan_at = :lastScanAt",
+        ExpressionAttributeValues: {
+          ":matches": formattedMatches,
+          ":lastScanAt": new Date().toISOString(),
+        },
+      }),
+    );
   }
 }
 

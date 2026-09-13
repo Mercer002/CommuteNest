@@ -1,4 +1,4 @@
-import type { ApiResponse, UserPreferences } from "./types.js";
+import type { ApiResponse, MatchedListing, UserPreferences } from "./types.js";
 
 const RAW_API_URL = import.meta.env.VITE_API_BASE_URL || "https://ikssv62lcj.execute-api.us-east-1.amazonaws.com";
 export const API_BASE_URL = RAW_API_URL.endsWith("/") ? RAW_API_URL.slice(0, -1) : RAW_API_URL;
@@ -51,6 +51,31 @@ export async function saveUserPreferences(
   if (!response.ok || !json.success || !json.data) {
     const errorMsg = json.errors?.join(", ") || json.error || `Failed to save preferences (HTTP ${response.status})`;
     throw new Error(errorMsg);
+  }
+
+  return json.data;
+}
+
+export async function triggerScan(
+  userId: string,
+  overrides?: Partial<UserPreferences>,
+): Promise<{ matches: MatchedListing[]; count: number; scannedAt: string }> {
+  const response = await fetch(`${API_BASE_URL}/preferences/${encodeURIComponent(userId)}/scan`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: overrides ? JSON.stringify(overrides) : "{}",
+  });
+
+  if (!response.ok) {
+    const errorJson: ApiResponse = await response.json().catch(() => ({ success: false, error: "Scan request failed" }));
+    throw new Error(errorJson.error || `Scan failed with HTTP ${response.status}`);
+  }
+
+  const json: ApiResponse<{ matches: MatchedListing[]; count: number; scannedAt: string }> = await response.json();
+  if (!json.success || !json.data) {
+    throw new Error(json.error || "Failed to parse scan response");
   }
 
   return json.data;

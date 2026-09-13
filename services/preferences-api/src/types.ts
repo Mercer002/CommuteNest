@@ -1,5 +1,16 @@
 export type TransitMode = "transit" | "driving" | "walking" | "bicycling";
 
+export interface MatchedListingRecord {
+  id: string;
+  title: string;
+  priceUsd: number;
+  address: string;
+  url: string;
+  commuteMinutes: number;
+  commuteSummary: string;
+  matchedAt: string;
+}
+
 export interface UserPreferencesRecord {
   userId: string;
   maxRentUsd: number;
@@ -8,6 +19,8 @@ export interface UserPreferencesRecord {
   transitMode: TransitMode;
   transitModes: string[];
   notificationEmail?: string;
+  recentMatches?: MatchedListingRecord[];
+  lastScanAt?: string;
   createdAt: string;
   updatedAt: string;
 }
