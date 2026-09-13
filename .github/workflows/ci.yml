@@ -65,3 +65,4 @@ jobs:
 
       - name: Terraform Validate
         run: terraform -chdir=infra validate
+

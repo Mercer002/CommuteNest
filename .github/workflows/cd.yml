@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     # To enable automated deployment:
     # 1. Create an AWS IAM Role configured with GitHub OIDC trust for this repository.
-    # 2. Add AWS_ROLE_TO_ASSUME (e.g. arn:aws:iam::852824353718:role/github-actions-deploy-role) to GitHub Repository Secrets.
+    # 2. Add AWS_ROLE_TO_ASSUME (e.g. arn:aws:iam::123456789012:role/github-actions-deploy-role) to GitHub Repository Secrets.
     # 3. Add AWS_REGION (us-east-1) to GitHub Repository Secrets or Variables.
     if: github.ref == 'refs/heads/main'
 
@@ -53,8 +53,8 @@ jobs:
       - name: Deploy Web Frontend to S3
         if: ${{ inputs.deploy_frontend }}
         env:
-          S3_BUCKET: ${{ vars.FRONTEND_S3_BUCKET || 'commutenest-dev-frontend-852824353718' }}
-          CLOUDFRONT_DIST_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID || 'E22KXGKTJ51A6A' }}
+          S3_BUCKET: ${{ vars.FRONTEND_S3_BUCKET }}
+          CLOUDFRONT_DIST_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
           aws s3 sync services/web-frontend/dist s3://$S3_BUCKET/ --delete
           aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"
@@ -68,3 +68,4 @@ jobs:
           aws lambda update-function-code \
             --function-name commutenest-dev-preferences-api \
             --zip-file fileb://services/preferences-api/dist/lambda.zip
+

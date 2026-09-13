@@ -26,7 +26,7 @@ describe("validateUpdatePreferencesInput", () => {
     targetDestination: "Union Station, Toronto, ON",
     transitMode: "transit",
     transitModes: ["subway", "train"],
-    notificationEmail: "mercer586@outlook.com",
+    notificationEmail: "demo@example.com",
   };
 
   it("accepts complete valid input", () => {
@@ -37,7 +37,7 @@ describe("validateUpdatePreferencesInput", () => {
       expect(result.data.maxCommuteMinutes).toBe(35);
       expect(result.data.targetDestination).toBe("Union Station, Toronto, ON");
       expect(result.data.transitMode).toBe("transit");
-      expect(result.data.notificationEmail).toBe("mercer586@outlook.com");
+      expect(result.data.notificationEmail).toBe("demo@example.com");
     }
   });
 

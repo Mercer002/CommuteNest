@@ -37,7 +37,7 @@ export function App() {
   const [targetDestination, setTargetDestination] = useState("Union Station, Toronto, ON");
   const [transitMode, setTransitMode] = useState<TransitMode>("transit");
   const [transitModes, setTransitModes] = useState<string[]>(["bus", "subway", "train"]);
-  const [notificationEmail, setNotificationEmail] = useState("mercer586@outlook.com");
+  const [notificationEmail, setNotificationEmail] = useState("demo@example.com");
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);

@@ -18,9 +18,9 @@ Built completely serverless on AWS, automated via Terraform, validated by contin
 | Component | URL / Endpoint | Infrastructure |
 | :--- | :--- | :--- |
 | **Web Dashboard** | [https://d1prli7bqnqqun.cloudfront.net](https://d1prli7bqnqqun.cloudfront.net) | CloudFront CDN + S3 + Origin Access Control (OAC) |
-| **Preferences REST API** | `https://ikssv62lcj.execute-api.us-east-1.amazonaws.com/` | Amazon API Gateway (HTTP v2) + Lambda (ARM64) |
-| **Health Check** | `GET https://ikssv62lcj.execute-api.us-east-1.amazonaws.com/health` | Sub-50ms Global Health Check |
-| **SNS Alert Topic** | `arn:aws:sns:us-east-1:852824353718:commutenest-dev-housing-alerts` | Amazon SNS Email Push Notifications |
+| **Preferences REST API** | `https://<api-id>.execute-api.us-east-1.amazonaws.com/` | Amazon API Gateway (HTTP v2) + Lambda (ARM64) |
+| **Health Check** | `GET /health` (via API Gateway) | Sub-50ms Global Health Check |
+| **SNS Alert Topic** | `arn:aws:sns:us-east-1:123456789012:commutenest-dev-housing-alerts` | Amazon SNS Email Push Notifications |
 
 ---
 
@@ -221,7 +221,7 @@ npm run phase5:deploy
 
 ## REST API Specification
 
-### Base URL: `https://ikssv62lcj.execute-api.us-east-1.amazonaws.com`
+### Base URL: `https://<api-id>.execute-api.us-east-1.amazonaws.com`
 
 #### `GET /health`
 Returns current API health and service timestamp.
@@ -237,13 +237,13 @@ Returns current API health and service timestamp.
 Retrieves saved commute and budget settings for a specific user.
 ```json
 {
-  "userId": "mercer",
+  "userId": "demo-user",
   "maxRent": 2000,
   "maxCommuteMinutes": 35,
-  "targetDestination": "Downtown Montreal, QC",
-  "targetCoordinates": { "lat": 45.5017, "lng": -73.5673 },
+  "targetDestination": "Downtown Union Station, Toronto, ON",
+  "targetCoordinates": { "lat": 43.6453, "lng": -79.3806 },
   "transitModes": ["transit", "bicycling"],
-  "notificationEmail": "mercer586@outlook.com"
+  "notificationEmail": "user@example.com"
 }
 ```
 
@@ -255,10 +255,10 @@ Updates or creates user commute and budget settings.
 {
   "maxRent": 1850,
   "maxCommuteMinutes": 30,
-  "targetDestination": "742 Evergreen Terrace",
-  "targetCoordinates": { "lat": 45.5048, "lng": -73.5772 },
+  "targetDestination": "Financial District, Toronto, ON",
+  "targetCoordinates": { "lat": 43.6481, "lng": -79.3817 },
   "transitModes": ["transit"],
-  "notificationEmail": "mercer586@outlook.com"
+  "notificationEmail": "user@example.com"
 }
 ```
 
@@ -274,7 +274,7 @@ Deletes user preferences from DynamoDB and resets to default values.
    - Preferences API: **2.4 KB** (bundled via `esbuild`).
    - Cold starts remain below **300ms** on AWS Graviton2 (ARM64).
 2. **CloudWatch Log Retention**: Capped at 7 days across all Lambda functions to prevent log accumulation over months.
-3. **Automated Cost Guardrail**: AWS Budgets triggers an emergency SNS alert to `mercer586@outlook.com` if account spend exceeds $1.00.
+3. **Automated Cost Guardrail**: AWS Budgets triggers an emergency SNS alert to the administrator if account spend exceeds $1.00.
 
 ---
 
