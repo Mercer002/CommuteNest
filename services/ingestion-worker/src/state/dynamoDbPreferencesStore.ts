@@ -1,0 +1,58 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import type { UserPreferences } from "../types.js";
+
+export interface DynamoDbPreferencesStoreOptions {
+  tableName: string;
+  client?: DynamoDBClient;
+  docClient?: { send(command: any): Promise<any> };
+}
+
+export class DynamoDbPreferencesStore {
+  private readonly tableName: string;
+  private readonly docClient: { send(command: any): Promise<any> };
+
+  constructor(options: DynamoDbPreferencesStoreOptions) {
+    if (!options.tableName) {
+      throw new Error("DynamoDbPreferencesStore requires a tableName.");
+    }
+
+    this.tableName = options.tableName;
+
+    if (options.docClient) {
+      this.docClient = options.docClient;
+    } else {
+      const baseClient = options.client ?? new DynamoDBClient({});
+      this.docClient = DynamoDBDocumentClient.from(baseClient, {
+        marshallOptions: {
+          removeUndefinedValues: true,
+        },
+      });
+    }
+  }
+
+  async loadUserPreferences(userId: string): Promise<UserPreferences | null> {
+    const response = await this.docClient.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: {
+          user_id: userId,
+        },
+      }),
+    );
+
+    if (!response.Item) {
+      return null;
+    }
+
+    const item = response.Item;
+    return {
+      maxRentUsd: Number(item.max_rent_usd),
+      maxCommuteMinutes: Number(item.max_commute_minutes),
+      targetDestination: String(item.target_destination),
+      transitMode: item.transit_mode,
+      transitModes: item.transit_modes ?? ["bus", "subway", "train"],
+    };
+  }
+}
+

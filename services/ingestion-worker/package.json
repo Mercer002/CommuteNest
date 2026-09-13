@@ -1,0 +1,33 @@
+{
+  "name": "@commute-nest/ingestion-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 1 local proof of concept for scraping housing listings and commute filtering.",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "demo": "DISTANCE_PROVIDER=mock LISTING_SOURCE_URL=fixtures/sample-listings.rss tsx src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "build:lambda": "node scripts/build-lambda.js",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1131.0",
+    "@aws-sdk/client-sns": "^3.1131.0",
+    "@aws-sdk/lib-dynamodb": "^3.1131.0",
+    "dotenv": "^16.4.7",
+    "fast-xml-parser": "^5.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

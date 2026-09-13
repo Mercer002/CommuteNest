@@ -1,0 +1,28 @@
+{
+  "name": "@commute-nest/preferences-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Serverless HTTP API for managing user commute and budget preferences in DynamoDB.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:lambda": "node scripts/build-lambda.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1131.0",
+    "@aws-sdk/lib-dynamodb": "^3.1131.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

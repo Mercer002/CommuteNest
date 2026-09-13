@@ -1,0 +1,67 @@
+name: CommuteNest CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality-and-tests:
+    name: Typecheck, Test & Package Bundles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run TypeScript Checks
+        run: npm run typecheck
+
+      - name: Run Workspace Unit Tests
+        run: npm test
+
+      - name: Build Lambda Bundles & Frontend
+        run: npm run build
+
+      - name: Verify Bundle Artifacts
+        run: |
+          test -f services/ingestion-worker/dist/lambda.zip || { echo "Missing ingestion worker zip"; exit 1; }
+          test -f services/preferences-api/dist/lambda.zip || { echo "Missing preferences API zip"; exit 1; }
+          test -f services/web-frontend/dist/index.html || { echo "Missing frontend index.html"; exit 1; }
+          echo "All bundle artifacts successfully generated and verified."
+
+  terraform-validate:
+    name: Terraform Format & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.5"
+
+      - name: Terraform Format Check
+        run: terraform -chdir=infra fmt -check
+
+      - name: Terraform Init (Backend-Agnostic)
+        run: terraform -chdir=infra init -backend=false
+
+      - name: Terraform Validate
+        run: terraform -chdir=infra validate

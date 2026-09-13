@@ -1,0 +1,31 @@
+{
+  "name": "commute-nest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run phase3:build:lambda && npm run phase4:build:lambda && npm run phase5:build",
+    "phase1:install": "npm install --prefix services/ingestion-worker",
+    "phase1:demo": "npm --prefix services/ingestion-worker run demo",
+    "phase1:test": "npm --prefix services/ingestion-worker test",
+    "phase1:typecheck": "npm --prefix services/ingestion-worker run typecheck",
+    "phase3:build:lambda": "npm --prefix services/ingestion-worker run build:lambda",
+    "phase3:test": "npm --prefix services/ingestion-worker test",
+    "phase4:build:lambda": "npm --prefix services/preferences-api run build:lambda",
+    "phase4:test": "npm --prefix services/preferences-api test",
+    "phase5:dev": "npm --prefix services/web-frontend run dev",
+    "phase5:build": "npm --prefix services/web-frontend run build",
+    "phase5:test": "npm --prefix services/web-frontend test",
+    "phase5:deploy": "npm --prefix services/web-frontend run deploy"
+  },
+  "workspaces": [
+    "services/ingestion-worker",
+    "services/preferences-api",
+    "services/web-frontend"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
