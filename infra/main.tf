@@ -113,6 +113,7 @@ module "api" {
   lambda_role_arn             = module.iam.preferences_api_lambda_role_arn
   lambda_zip_path             = "${path.module}/../services/preferences-api/dist/lambda.zip"
   user_preferences_table_name = module.database.user_preferences_table_name
+  alerts_topic_arn            = module.notifications.alerts_topic_arn
   log_retention_in_days       = 7
   tags                        = local.common_tags
 }

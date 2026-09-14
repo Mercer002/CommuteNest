@@ -58,10 +58,19 @@ export async function runIngestionPipeline({
       const evaluation = evaluateListing(listing, commute, preferences);
 
       if (evaluation.matches) {
-        const match: MatchedListing = { listing, commute };
+        const match: MatchedListing = {
+          listing,
+          commute,
+          isGoodDeal: evaluation.isGoodDeal,
+          dealReason: evaluation.dealReason,
+        };
         matches.push(match);
-        await alertSink.sendMatchAlert(match);
-        summary.alerted += 1;
+
+        // Only send email alert for listings that are GOOD DEALS!
+        if (evaluation.isGoodDeal) {
+          await alertSink.sendMatchAlert(match);
+          summary.alerted += 1;
+        }
       } else {
         summary.skippedCommute += 1;
       }

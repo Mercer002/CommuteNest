@@ -32,11 +32,36 @@ describe("listing filters", () => {
     expect(isWithinBudget(listing, preferences)).toBe(true);
   });
 
-  it("matches when rent and commute are within preferences", () => {
-    expect(evaluateListing(listing, commute, preferences)).toEqual({
-      matches: true,
-      reasons: [],
-    });
+  it("matches and flags good deal when rent savings >= $100", () => {
+    const result = evaluateListing(listing, commute, preferences);
+    expect(result.matches).toBe(true);
+    expect(result.reasons).toEqual([]);
+    expect(result.isGoodDeal).toBe(true);
+    expect(result.dealReason).toContain("$150 below budget ceiling");
+  });
+
+  it("matches and flags good deal when commute is fast (<= 75% of max)", () => {
+    // price 1750 (savings $50 < $100), commute 20 min (20 <= round(35 * 0.75) = 26)
+    const result = evaluateListing(
+      { ...listing, priceUsd: 1750 },
+      { ...commute, durationMinutes: 20 },
+      preferences,
+    );
+    expect(result.matches).toBe(true);
+    expect(result.isGoodDeal).toBe(true);
+    expect(result.dealReason).toContain("Express commute: only 20 min");
+  });
+
+  it("matches but does NOT flag good deal when savings < $100 and commute > 75%", () => {
+    // price 1750 (savings $50 < $100), commute 30 min (> 26 min)
+    const result = evaluateListing(
+      { ...listing, priceUsd: 1750 },
+      { ...commute, durationMinutes: 30 },
+      preferences,
+    );
+    expect(result.matches).toBe(true);
+    expect(result.isGoodDeal).toBe(false);
+    expect(result.dealReason).toBeUndefined();
   });
 
   it("returns reasons when a listing misses constraints", () => {
@@ -47,6 +72,7 @@ describe("listing filters", () => {
     );
 
     expect(result.matches).toBe(false);
+    expect(result.isGoodDeal).toBe(false);
     expect(result.reasons).toHaveLength(2);
   });
 });

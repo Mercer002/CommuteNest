@@ -21,19 +21,26 @@ export class SnsAlertSink implements AlertSink {
 
   async sendMatchAlert(match: MatchedListing): Promise<void> {
     const { listing, commute } = match;
-
-    const rawSubject = `[CommuteNest] $${listing.priceUsd}/mo - ${commute.durationMinutes}m commute: ${listing.title}`;
+    const dealPrefix = match.isGoodDeal ? "🔥 [DEAL] " : "";
+    const rawSubject = `${dealPrefix}[CommuteNest] $${listing.priceUsd}/mo - ${commute.durationMinutes}m commute: ${listing.title}`;
     const subject = rawSubject.length > 100 ? `${rawSubject.slice(0, 97)}...` : rawSubject;
 
     const lines = [
-      "CommuteNest Housing Alert",
+      match.isGoodDeal ? "🔥 CommuteNest Good Deal Alert" : "CommuteNest Housing Alert",
       "=================================",
       `Title: ${listing.title}`,
       `Rent: $${listing.priceUsd}/month`,
       `Commute: ${commute.durationMinutes} minutes (${commute.provider} provider)`,
+    ];
+
+    if (match.dealReason) {
+      lines.push(`Why it's a deal: ${match.dealReason}`);
+    }
+
+    lines.push(
       `Origin: ${commute.originAddress}`,
       `Destination: ${commute.destinationAddress}`,
-    ];
+    );
 
     if (commute.distanceText) {
       lines.push(`Distance: ${commute.distanceText}`);

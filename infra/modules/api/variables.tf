@@ -23,6 +23,12 @@ variable "user_preferences_table_name" {
   type        = string
 }
 
+variable "alerts_topic_arn" {
+  description = "ARN of the SNS topic used for housing alerts."
+  type        = string
+  default     = ""
+}
+
 variable "log_retention_in_days" {
   description = "Number of days to retain CloudWatch logs (keeps storage in Free Tier)."
   type        = number

@@ -8,6 +8,8 @@ export interface MatchedListingRecord {
   url: string;
   commuteMinutes: number;
   commuteSummary: string;
+  isGoodDeal?: boolean;
+  dealReason?: string;
   matchedAt: string;
 }
 

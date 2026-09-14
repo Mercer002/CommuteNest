@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEventV2 } from "aws-lambda";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { handler, setRepository } from "../handler.js";
+import { handler, setRepository, setSnsClient } from "../handler.js";
 import { PreferencesRepository } from "../repository.js";
 
 describe("API Gateway Handler", () => {
@@ -130,6 +130,31 @@ describe("API Gateway Handler", () => {
     expect(body.success).toBe(true);
     expect(body.data.matches).toBeDefined();
     expect(body.data.count).toBeGreaterThan(0);
+  });
+
+  it("handles POST /preferences/{userId}/email-deals to dispatch email alerts", async () => {
+    process.env.ALERTS_TOPIC_ARN = "arn:aws:sns:us-east-1:123456789012:test-alerts";
+    const mockSnsSend = vi.fn().mockResolvedValueOnce({ MessageId: "msg-123" });
+    setSnsClient({ send: mockSnsSend } as any);
+
+    mockSend.mockResolvedValueOnce({
+      Item: {
+        user_id: "mercer",
+        max_rent_usd: 2000,
+        max_commute_minutes: 30,
+        target_destination: "Union Station, Toronto, ON",
+        transit_mode: "transit",
+      },
+    });
+
+    const event = createEvent("POST", "/preferences/mercer/email-deals");
+    const response = (await handler(event)) as { statusCode: number; body: string };
+    expect(response.statusCode).toBe(200);
+
+    const body = JSON.parse(response.body);
+    expect(body.success).toBe(true);
+    expect(body.data.sent).toBe(true);
+    expect(mockSnsSend).toHaveBeenCalled();
   });
 
   it("handles GET /preferences/{userId} when not found with 404", async () => {

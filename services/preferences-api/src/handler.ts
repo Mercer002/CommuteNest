@@ -1,3 +1,4 @@
+import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
 import { findMatchingListings } from "./matcher.js";
 import { PreferencesRepository } from "./repository.js";
@@ -20,6 +21,7 @@ function jsonResponse(statusCode: number, body: ApiResponse): APIGatewayProxyRes
 }
 
 let repositoryInstance: PreferencesRepository | null = null;
+let snsClientInstance: SNSClient | null = null;
 
 function getRepository(): PreferencesRepository {
   if (!repositoryInstance) {
@@ -34,6 +36,17 @@ function getRepository(): PreferencesRepository {
 
 export function setRepository(repo: PreferencesRepository): void {
   repositoryInstance = repo;
+}
+
+function getSnsClient(): SNSClient {
+  if (!snsClientInstance) {
+    snsClientInstance = new SNSClient({});
+  }
+  return snsClientInstance;
+}
+
+export function setSnsClient(client: SNSClient): void {
+  snsClientInstance = client;
 }
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
@@ -60,17 +73,28 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     });
   }
 
-  // Check for /preferences/{userId}/scan route
+  // Check for routes
+  const emailDealsMatch = path.match(/^\/preferences\/([^/]+)\/email-deals\/?$/);
   const scanMatch = path.match(/^\/preferences\/([^/]+)\/scan\/?$/);
   const prefsMatch = path.match(/^\/preferences\/([^/]+)\/?$/);
+
+  const isEmailDealsRoute = Boolean(emailDealsMatch);
   const isScanRoute = Boolean(scanMatch);
 
-  const rawUserId = event.pathParameters?.userId ?? (scanMatch ? decodeURIComponent(scanMatch[1]) : (prefsMatch ? decodeURIComponent(prefsMatch[1]) : undefined));
+  const rawUserId = event.pathParameters?.userId ?? (
+    emailDealsMatch
+      ? decodeURIComponent(emailDealsMatch[1])
+      : scanMatch
+        ? decodeURIComponent(scanMatch[1])
+        : prefsMatch
+          ? decodeURIComponent(prefsMatch[1])
+          : undefined
+  );
 
   if (!rawUserId) {
     return jsonResponse(404, {
       success: false,
-      error: "Not Found. Available routes: GET /health, GET /preferences/{userId}, PUT /preferences/{userId}, POST /preferences/{userId}/scan, DELETE /preferences/{userId}",
+      error: "Not Found. Available routes: GET /health, GET /preferences/{userId}, PUT /preferences/{userId}, POST /preferences/{userId}/scan, POST /preferences/{userId}/email-deals, DELETE /preferences/{userId}",
     });
   }
 
@@ -86,6 +110,83 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   const repo = getRepository();
 
   try {
+    if (isEmailDealsRoute) {
+      const topicArn = process.env.ALERTS_TOPIC_ARN;
+      if (!topicArn) {
+        return jsonResponse(500, {
+          success: false,
+          error: "ALERTS_TOPIC_ARN is not configured on the API server.",
+        });
+      }
+
+      let prefs = await repo.getPreferences(userId);
+      if (!prefs) {
+        prefs = {
+          userId,
+          maxRentUsd: 1800,
+          maxCommuteMinutes: 35,
+          targetDestination: "Union Station, Toronto, ON",
+          transitMode: "transit",
+          transitModes: ["bus", "subway", "train"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      const matches = findMatchingListings(prefs);
+      const deals = matches.filter((m) => m.isGoodDeal);
+
+      if (deals.length === 0) {
+        return jsonResponse(200, {
+          success: true,
+          data: {
+            sent: false,
+            message: "No current listings qualify as good deals under these constraints.",
+          },
+        });
+      }
+
+      const destName = prefs.targetDestination.split(",")[0] || prefs.targetDestination;
+      const subject = `🔥 CommuteNest: ${deals.length} Top Deal${deals.length > 1 ? "s" : ""} Found near ${destName}!`;
+      const messageLines = [
+        `CommuteNest Verified Housing Deals Alert`,
+        `========================================`,
+        ``,
+        `Hello ${userId},`,
+        ``,
+        `We identified ${deals.length} verified good deal(s) matching your transit criteria for ${destName}:`,
+        ``,
+        ...deals.map((deal, idx) => [
+          `#${idx + 1}. ${deal.title}`,
+          `   Price:   $${deal.priceUsd}/month (${deal.dealReason || "Under budget"})`,
+          `   Commute: ${deal.commuteSummary}`,
+          `   Address: ${deal.address}`,
+          `   Listing: ${deal.url}`,
+          ``,
+        ].join("\n")),
+        `----------------------------------------`,
+        `CommuteNest Serverless Engine • AWS CloudFront + DynamoDB + SNS`,
+      ];
+
+      const snsClient = getSnsClient();
+      await snsClient.send(
+        new PublishCommand({
+          TopicArn: topicArn,
+          Subject: subject,
+          Message: messageLines.join("\n"),
+        }),
+      );
+
+      return jsonResponse(200, {
+        success: true,
+        data: {
+          sent: true,
+          dealCount: deals.length,
+          message: `Dispatched email alert with ${deals.length} top deal(s) to your registered email!`,
+        },
+      });
+    }
+
     if (isScanRoute) {
       let prefs = await repo.getPreferences(userId);
       if (!prefs) {

@@ -21,6 +21,7 @@ resource "aws_lambda_function" "preferences_api" {
   environment {
     variables = {
       USER_PREFERENCES_TABLE_NAME = var.user_preferences_table_name
+      ALERTS_TOPIC_ARN            = var.alerts_topic_arn
     }
   }
 
@@ -40,7 +41,7 @@ resource "aws_apigatewayv2_api" "http_api" {
 
   cors_configuration {
     allow_origins = ["*"]
-    allow_methods = ["GET", "PUT", "DELETE", "OPTIONS"]
+    allow_methods = ["GET", "PUT", "POST", "DELETE", "OPTIONS"]
     allow_headers = ["*"]
     max_age       = 300
   }

@@ -76,6 +76,13 @@ data "aws_iam_policy_document" "preferences_api_lambda" {
   }
 
   statement {
+    sid       = "PublishHousingAlerts"
+    effect    = "Allow"
+    actions   = ["sns:Publish"]
+    resources = [var.alerts_topic_arn]
+  }
+
+  statement {
     sid    = "WritePreferencesApiLogs"
     effect = "Allow"
 

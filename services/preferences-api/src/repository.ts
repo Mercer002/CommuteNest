@@ -6,6 +6,7 @@ import {
   PutCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import type { UpdatePreferencesInput, UserPreferencesRecord } from "./types.js";
 import type { MatchedListingRecord, UpdatePreferencesInput, UserPreferencesRecord } from "./types.js";
 
 export interface DynamoDbDocClientLike {

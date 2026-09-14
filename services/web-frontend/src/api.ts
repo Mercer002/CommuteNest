@@ -81,3 +81,26 @@ export async function triggerScan(
   return json.data;
 }
 
+export async function sendDealsEmail(
+  userId: string,
+): Promise<{ sent: boolean; dealsCount: number; deals: MatchedListing[]; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/preferences/${encodeURIComponent(userId)}/email-deals`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorJson: ApiResponse = await response.json().catch(() => ({ success: false, error: "Email deals request failed" }));
+    throw new Error(errorJson.error || `Email request failed with HTTP ${response.status}`);
+  }
+
+  const json: ApiResponse<{ sent: boolean; dealsCount: number; deals: MatchedListing[]; message: string }> = await response.json();
+  if (!json.success || !json.data) {
+    throw new Error(json.error || "Failed to parse email deals response");
+  }
+
+  return json.data;
+}
+

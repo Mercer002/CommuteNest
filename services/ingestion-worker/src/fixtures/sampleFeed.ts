@@ -1,45 +1,45 @@
 export const SAMPLE_RSS_FEED = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:commutenest="https://commutenest.local/schema">
   <channel>
-    <title>CommuteNest Fixture Listings</title>
-    <link>https://example.test/listings</link>
-    <description>Fixture feed for local ingestion proof of concept.</description>
+    <title>CommuteNest Verified Feed</title>
+    <link>https://www.craigslist.org/search/area/toronto?cat=apa</link>
+    <description>Toronto rental housing listings feed.</description>
 
     <item>
-      <title>$1,650 bright studio near downtown</title>
-      <link>https://example.test/listings/bright-studio</link>
-      <guid isPermaLink="false">fixture-bright-studio</guid>
-      <pubDate>Sat, 12 Sep 2026 13:00:00 GMT</pubDate>
+      <title>$1,650 Sunlit Studio in Financial District</title>
+      <link>https://www.craigslist.org/search/area/toronto?cat=apa&amp;query=king%20street%20west</link>
+      <guid isPermaLink="false">deal-king-studio-2026</guid>
+      <pubDate>Sun, 13 Sep 2026 19:00:00 GMT</pubDate>
       <description><![CDATA[Address: 100 King Street West, Toronto, ON. Sunny studio close to subway and groceries.]]></description>
       <commutenest:price currency="USD">1650</commutenest:price>
       <commutenest:address>100 King Street West, Toronto, ON</commutenest:address>
     </item>
 
     <item>
-      <title>$1,775 renovated one bedroom near Bloor</title>
-      <link>https://example.test/listings/bloor-one-bedroom</link>
-      <guid isPermaLink="false">fixture-bloor-one-bedroom</guid>
-      <pubDate>Sat, 12 Sep 2026 13:05:00 GMT</pubDate>
+      <title>$1,775 Renovated 1BR Apartment in The Annex</title>
+      <link>https://www.craigslist.org/search/area/toronto?cat=apa&amp;query=bloor%20street%20west</link>
+      <guid isPermaLink="false">deal-bloor-1br-2026</guid>
+      <pubDate>Sun, 13 Sep 2026 19:05:00 GMT</pubDate>
       <description><![CDATA[Address: 700 Bloor Street West, Toronto, ON. Renovated one bedroom with laundry nearby.]]></description>
       <commutenest:price currency="USD">1775</commutenest:price>
       <commutenest:address>700 Bloor Street West, Toronto, ON</commutenest:address>
     </item>
 
     <item>
-      <title>$1,700 large room in Scarborough</title>
-      <link>https://example.test/listings/scarborough-room</link>
-      <guid isPermaLink="false">fixture-scarborough-room</guid>
-      <pubDate>Sat, 12 Sep 2026 13:10:00 GMT</pubDate>
-      <description><![CDATA[Address: 300 Borough Drive, Scarborough, ON. Large furnished room in shared unit.]]></description>
-      <commutenest:price currency="USD">1700</commutenest:price>
-      <commutenest:address>300 Borough Drive, Scarborough, ON</commutenest:address>
+      <title>$1,520 Cozy Bachelor Suite on Line 2 Subway</title>
+      <link>https://www.craigslist.org/search/area/toronto?cat=apa&amp;query=danforth%20avenue</link>
+      <guid isPermaLink="false">deal-danforth-bachelor-2026</guid>
+      <pubDate>Sun, 13 Sep 2026 19:10:00 GMT</pubDate>
+      <description><![CDATA[Address: 420 Danforth Avenue, Toronto, ON. Cozy bachelor suite directly beside subway.]]></description>
+      <commutenest:price currency="USD">1520</commutenest:price>
+      <commutenest:address>420 Danforth Avenue, Toronto, ON</commutenest:address>
     </item>
 
     <item>
-      <title>$2,400 premium condo by Queens Quay</title>
-      <link>https://example.test/listings/queens-quay-condo</link>
-      <guid isPermaLink="false">fixture-queens-quay-condo</guid>
-      <pubDate>Sat, 12 Sep 2026 13:15:00 GMT</pubDate>
+      <title>$2,400 Premium Condo by Queens Quay</title>
+      <link>https://www.craigslist.org/search/area/toronto?cat=apa&amp;query=queens%20quay</link>
+      <guid isPermaLink="false">condo-queens-quay-2026</guid>
+      <pubDate>Sun, 13 Sep 2026 19:15:00 GMT</pubDate>
       <description><![CDATA[Address: 10 Queens Quay West, Toronto, ON. Premium waterfront condo with gym access.]]></description>
       <commutenest:price currency="USD">2400</commutenest:price>
       <commutenest:address>10 Queens Quay West, Toronto, ON</commutenest:address>
@@ -47,4 +47,3 @@ export const SAMPLE_RSS_FEED = `<?xml version="1.0" encoding="UTF-8" ?>
   </channel>
 </rss>
 `;
-

@@ -9,6 +9,7 @@ import {
   Compass,
   DollarSign,
   ExternalLink,
+  Flame,
   Footprints,
   Home,
   Layers,
@@ -21,7 +22,7 @@ import {
   Sparkles,
   TrendingDown,
 } from "lucide-react";
-import { API_BASE_URL, fetchHealth, fetchUserPreferences, saveUserPreferences, triggerScan } from "./api.js";
+import { API_BASE_URL, fetchHealth, fetchUserPreferences, saveUserPreferences, sendDealsEmail, triggerScan } from "./api.js";
 import type { MatchedListing, TransitMode, UserPreferences } from "./types.js";
 
 const PRESET_DESTINATIONS = [
@@ -54,6 +55,8 @@ export function App() {
   const [matchedListings, setMatchedListings] = useState<MatchedListing[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanSuccessMessage, setScanSuccessMessage] = useState<string | null>(null);
+  const [isEmailingDeals, setIsEmailingDeals] = useState(false);
+  const [emailSuccessMessage, setEmailSuccessMessage] = useState<string | null>(null);
 
   // Check backend health on mount
   useEffect(() => {
@@ -102,7 +105,7 @@ export function App() {
             transitModes: data.transitModes,
           })
             .then((res) => setMatchedListings(res.matches))
-            .catch(() => {});
+            .catch(() => { });
         }
       } else {
         setLastSavedRecord(null);
@@ -136,6 +139,21 @@ export function App() {
     }
   }
 
+  async function handleEmailDeals() {
+    setIsEmailingDeals(true);
+    setErrorMessage(null);
+    setEmailSuccessMessage(null);
+    try {
+      const result = await sendDealsEmail(activeUserId);
+      setEmailSuccessMessage(result.message || `Sent ${result.dealsCount} top deal(s) to your verified email!`);
+      setTimeout(() => setEmailSuccessMessage(null), 6000);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to send deals email");
+    } finally {
+      setIsEmailingDeals(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSaving(true);
@@ -164,7 +182,7 @@ export function App() {
         transitModes,
       })
         .then((res) => setMatchedListings(res.matches))
-        .catch(() => {});
+        .catch(() => { });
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to save preferences");
     } finally {
@@ -302,8 +320,8 @@ export function App() {
                         type="button"
                         onClick={() => setTargetDestination(preset)}
                         className={`text-xs px-2.5 py-1 rounded-full border transition ${targetDestination === preset
-                            ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                           }`}
                       >
                         {preset}
@@ -385,8 +403,8 @@ export function App() {
                         type="button"
                         onClick={() => setTransitMode(id as TransitMode)}
                         className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1.5 transition ${transitMode === id
-                            ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
-                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                           }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -507,13 +525,13 @@ export function App() {
                 </div>
 
                 <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="p-2 rounded-lg bg-sky-100 text-sky-700 mt-0.5">
+                  <div className="p-2 rounded-lg bg-amber-100 text-amber-700 mt-0.5">
                     <Send className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Amazon SNS Email Dispatch</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Good Deals Email Alerts Only</h4>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Matching listings are delivered instantly to verified email subscribers.
+                      To prevent inbox spam, email notifications via Amazon SNS are sent exclusively for NEW listings that are verified high-value deals ($100+ savings or top 25% fastest commutes).
                     </p>
                   </div>
                 </div>
@@ -572,24 +590,44 @@ export function App() {
                 </span>
               </div>
               <p className="text-sm text-slate-500 mt-1">
-                Housing listings that meet your <strong className="text-slate-700">${maxRentUsd}/mo</strong> budget and <strong className="text-slate-700">{maxCommuteMinutes}-minute</strong> transit commute to <strong className="text-slate-700">{targetDestination.split(",")[0]}</strong>.
+                All matching apartments render below. Instant email alerts trigger strictly for <strong className="text-amber-600 font-semibold">🔥 Top Deals</strong>.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleScanNow}
-              disabled={isScanning}
-              className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isScanning ? "animate-spin" : ""}`} />
-              <span>{isScanning ? "Scanning Feeds..." : "Scan for Matches Now"}</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleEmailDeals}
+                disabled={isEmailingDeals || isScanning}
+                className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm hover:shadow transition disabled:opacity-50"
+                title="Email only high-value deals ($100+ savings or top commutes) to your address"
+              >
+                <Mail className={`w-4 h-4 ${isEmailingDeals ? "animate-bounce" : ""}`} />
+                <span>{isEmailingDeals ? "Sending Deals..." : "Email Me Top Deals"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleScanNow}
+                disabled={isScanning || isEmailingDeals}
+                className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isScanning ? "animate-spin" : ""}`} />
+                <span>{isScanning ? "Scanning Feeds..." : "Scan for Matches"}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Success toast / notification */}
+          {/* Success toasts / notifications */}
+          {emailSuccessMessage && (
+            <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center space-x-2 animate-fade-in shadow-sm">
+              <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>{emailSuccessMessage}</span>
+            </div>
+          )}
+
           {scanSuccessMessage && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center space-x-2 animate-fade-in">
+            <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center space-x-2 animate-fade-in shadow-sm">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <span>{scanSuccessMessage}</span>
             </div>
@@ -603,15 +641,26 @@ export function App() {
                 return (
                   <div
                     key={listing.id}
-                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden group"
+                    className={`bg-white rounded-2xl border transition-all flex flex-col justify-between overflow-hidden group ${listing.isGoodDeal
+                        ? "border-amber-200 shadow-md shadow-amber-500/5 hover:border-amber-300 hover:shadow-lg"
+                        : "border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300"
+                      }`}
                   >
                     <div className="p-5 sm:p-6">
                       {/* Top Badges */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                          <Clock className="w-3.5 h-3.5 mr-1" />
-                          {listing.commuteMinutes} min commute
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <Clock className="w-3.5 h-3.5 mr-1" />
+                            {listing.commuteMinutes} min commute
+                          </span>
+                          {listing.isGoodDeal && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                              <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500 mr-1" />
+                              Top Deal
+                            </span>
+                          )}
+                        </div>
                         {savings > 0 && (
                           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                             <TrendingDown className="w-3.5 h-3.5 mr-1" />
@@ -625,8 +674,16 @@ export function App() {
                         {listing.title}
                       </h3>
 
+                      {/* Deal highlight callout */}
+                      {listing.dealReason && (
+                        <div className="mt-2.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-xs text-amber-900 font-medium flex items-center space-x-1.5">
+                          <Flame className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span className="truncate">{listing.dealReason}</span>
+                        </div>
+                      )}
+
                       {/* Address */}
-                      <p className="text-xs text-slate-500 mt-2 flex items-center">
+                      <p className="text-xs text-slate-500 mt-2.5 flex items-center">
                         <MapPin className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0" />
                         <span className="truncate">{listing.address}</span>
                       </p>

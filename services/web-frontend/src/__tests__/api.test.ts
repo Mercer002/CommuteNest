@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fetchHealth, fetchUserPreferences, saveUserPreferences, triggerScan } from "../api.js";
+import { fetchHealth, fetchUserPreferences, saveUserPreferences, sendDealsEmail, triggerScan } from "../api.js";
 
 describe("Web Frontend API Client", () => {
   beforeEach(() => {
@@ -107,6 +107,26 @@ describe("Web Frontend API Client", () => {
     const result = await triggerScan("mercer", { maxRentUsd: 1800 });
     expect(result.count).toBe(1);
     expect(result.matches[0].title).toBe("Modern 1BR");
+  });
+
+  it("calls sendDealsEmail via POST /email-deals", async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          sent: true,
+          dealsCount: 2,
+          deals: [],
+          message: "Sent 2 top deal(s) to your verified email!",
+        },
+      }),
+    });
+
+    const result = await sendDealsEmail("mercer");
+    expect(result.sent).toBe(true);
+    expect(result.dealsCount).toBe(2);
+    expect(result.message).toContain("Sent 2 top deal(s)");
   });
 });
 

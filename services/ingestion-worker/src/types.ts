@@ -50,6 +50,8 @@ export interface CommuteResult {
 export interface MatchedListing {
   listing: Listing;
   commute: CommuteResult;
+  isGoodDeal?: boolean;
+  dealReason?: string;
 }
 
 export interface ListingScraper {
