@@ -135,19 +135,26 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
       const matches = findMatchingListings(prefs);
       const deals = matches.filter((m) => m.isGoodDeal);
+      const alreadyEmailed = new Set(prefs.emailedListingIds || []);
+      // STRICT FILTER: Only email listings that are BOTH good deals AND NEVER PREVIOUSLY EMAILED!
+      const newDeals = matches.filter((m) => m.isGoodDeal && !alreadyEmailed.has(m.id));
 
       if (deals.length === 0) {
+      if (newDeals.length === 0) {
         return jsonResponse(200, {
           success: true,
           data: {
             sent: false,
             message: "No current listings qualify as good deals under these constraints.",
+            dealCount: 0,
+            message: "No new un-emailed deals found. You're completely up to date!",
           },
         });
       }
 
       const destName = prefs.targetDestination.split(",")[0] || prefs.targetDestination;
       const subject = `🔥 CommuteNest: ${deals.length} Top Deal${deals.length > 1 ? "s" : ""} Found near ${destName}!`;
+      const subject = `🔥 CommuteNest: ${newDeals.length} NEW Top Deal${newDeals.length > 1 ? "s" : ""} Found near ${destName}!`;
       const messageLines = [
         `CommuteNest Verified Housing Deals Alert`,
         `========================================`,
@@ -155,13 +162,16 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         `Hello ${userId},`,
         ``,
         `We identified ${deals.length} verified good deal(s) matching your transit criteria for ${destName}:`,
+        `We identified ${newDeals.length} NEW verified good deal(s) matching your transit criteria for ${destName}:`,
         ``,
         ...deals.map((deal, idx) => [
+        ...newDeals.map((deal, idx) => [
           `#${idx + 1}. ${deal.title}`,
           `   Price:   $${deal.priceUsd}/month (${deal.dealReason || "Under budget"})`,
           `   Commute: ${deal.commuteSummary}`,
           `   Address: ${deal.address}`,
           `   Listing: ${deal.url}`,
+          `   Listing URL: ${deal.url}`,
           ``,
         ].join("\n")),
         `----------------------------------------`,
@@ -177,12 +187,18 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         }),
       );
 
+      // Record newly emailed listing IDs so they are NEVER emailed again
+      const updatedEmailedIds = Array.from(new Set([...alreadyEmailed, ...newDeals.map((d) => d.id)]));
+      await repo.recordEmailedListings(userId, updatedEmailedIds);
+
       return jsonResponse(200, {
         success: true,
         data: {
           sent: true,
           dealCount: deals.length,
           message: `Dispatched email alert with ${deals.length} top deal(s) to your registered email!`,
+          dealCount: newDeals.length,
+          message: `Dispatched email alert with ${newDeals.length} NEW top deal(s) to your registered email!`,
         },
       });
     }

@@ -23,6 +23,7 @@ export interface UserPreferencesRecord {
   notificationEmail?: string;
   recentMatches?: MatchedListingRecord[];
   lastScanAt?: string;
+  emailedListingIds?: string[];
   createdAt: string;
   updatedAt: string;
 }

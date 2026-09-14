@@ -146,6 +146,7 @@ describe("API Gateway Handler", () => {
         transit_mode: "transit",
       },
     });
+    }).mockResolvedValueOnce({});
 
     const event = createEvent("POST", "/preferences/mercer/email-deals");
     const response = (await handler(event)) as { statusCode: number; body: string };
@@ -155,6 +156,42 @@ describe("API Gateway Handler", () => {
     expect(body.success).toBe(true);
     expect(body.data.sent).toBe(true);
     expect(mockSnsSend).toHaveBeenCalled();
+  });
+
+  it("skips already emailed deals and does not send duplicate emails", async () => {
+    process.env.ALERTS_TOPIC_ARN = "arn:aws:sns:us-east-1:123456789012:test-alerts";
+    const mockSnsSend = vi.fn();
+    setSnsClient({ send: mockSnsSend } as any);
+
+    mockSend.mockResolvedValueOnce({
+      Item: {
+        user_id: "mercer",
+        max_rent_usd: 2000,
+        max_commute_minutes: 30,
+        target_destination: "Union Station, Toronto, ON",
+        transit_mode: "transit",
+        emailed_listing_ids: [
+          "craigslist-toronto-jarvis-suite",
+          "craigslist-annex-bloor-spadina",
+          "craigslist-dufferin-grove-2br",
+          "craigslist-danforth-birchmount",
+          "craigslist-north-york-sheppard",
+          "craigslist-midtown-yonge-2br",
+          "craigslist-waterfront-1br-den",
+          "craigslist-dundas-east-grid-condo",
+        ],
+      },
+    });
+
+    const event = createEvent("POST", "/preferences/mercer/email-deals");
+    const response = (await handler(event)) as { statusCode: number; body: string };
+    expect(response.statusCode).toBe(200);
+
+    const body = JSON.parse(response.body);
+    expect(body.success).toBe(true);
+    expect(body.data.sent).toBe(false);
+    expect(body.data.dealCount).toBe(0);
+    expect(mockSnsSend).not.toHaveBeenCalled();
   });
 
   it("handles GET /preferences/{userId} when not found with 404", async () => {

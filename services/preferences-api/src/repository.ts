@@ -67,6 +67,7 @@ export class PreferencesRepository {
       notificationEmail: item.notification_email,
       recentMatches: item.recent_matches ?? [],
       lastScanAt: item.last_scan_at,
+      emailedListingIds: item.emailed_listing_ids ?? [],
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     };
@@ -89,6 +90,7 @@ export class PreferencesRepository {
       notificationEmail: input.notificationEmail,
       recentMatches: existing?.recentMatches ?? [],
       lastScanAt: existing?.lastScanAt,
+      emailedListingIds: existing?.emailedListingIds ?? [],
       createdAt: existing ? existing.createdAt : now,
       updatedAt: now,
     };
@@ -106,6 +108,7 @@ export class PreferencesRepository {
           notification_email: record.notificationEmail,
           recent_matches: record.recentMatches,
           last_scan_at: record.lastScanAt,
+          emailed_listing_ids: record.emailedListingIds,
           created_at: record.createdAt,
           updated_at: record.updatedAt,
         },
@@ -132,6 +135,24 @@ export class PreferencesRepository {
       }),
     );
     return matches;
+  }
+
+  async recordEmailedListings(
+    userId: string,
+    allEmailedIds: string[],
+  ): Promise<string[]> {
+    await this.docClient.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: { user_id: userId },
+        UpdateExpression: "SET emailed_listing_ids = :emailedIds, updated_at = :updatedAt",
+        ExpressionAttributeValues: {
+          ":emailedIds": allEmailedIds,
+          ":updatedAt": new Date().toISOString(),
+        },
+      }),
+    );
+    return allEmailedIds;
   }
 
   async deletePreferences(userId: string): Promise<boolean> {

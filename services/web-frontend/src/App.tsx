@@ -146,6 +146,7 @@ export function App() {
     try {
       const result = await sendDealsEmail(activeUserId);
       setEmailSuccessMessage(result.message || `Sent ${result.dealsCount} top deal(s) to your verified email!`);
+      setEmailSuccessMessage(result.message || (result.sent ? "Dispatched new top deal(s) to your verified email!" : "All top deals have already been emailed. You are up to date!"));
       setTimeout(() => setEmailSuccessMessage(null), 6000);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to send deals email");
@@ -530,8 +531,10 @@ export function App() {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">Good Deals Email Alerts Only</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Strict &ldquo;New Deals Only&rdquo; Email Alerts</h4>
                     <p className="text-xs text-slate-500 mt-0.5">
                       To prevent inbox spam, email notifications via Amazon SNS are sent exclusively for NEW listings that are verified high-value deals ($100+ savings or top 25% fastest commutes).
+                      To eliminate spam, email notifications via Amazon SNS are sent exclusively for NEW listings that are verified high-value deals ($100+ savings or top 25% fastest commutes). Old or previously emailed listings are never re-sent.
                     </p>
                   </div>
                 </div>
@@ -591,6 +594,7 @@ export function App() {
               </div>
               <p className="text-sm text-slate-500 mt-1">
                 All matching apartments render below. Instant email alerts trigger strictly for <strong className="text-amber-600 font-semibold">🔥 Top Deals</strong>.
+                All matching apartments render below with direct listing links. Instant email alerts trigger strictly for <strong className="text-amber-600 font-semibold">NEW Top Deals</strong>.
               </p>
             </div>
 
@@ -601,9 +605,11 @@ export function App() {
                 disabled={isEmailingDeals || isScanning}
                 className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm hover:shadow transition disabled:opacity-50"
                 title="Email only high-value deals ($100+ savings or top commutes) to your address"
+                title="Email only newly discovered good deals that haven't been emailed yet"
               >
                 <Mail className={`w-4 h-4 ${isEmailingDeals ? "animate-bounce" : ""}`} />
                 <span>{isEmailingDeals ? "Sending Deals..." : "Email Me Top Deals"}</span>
+                <span>{isEmailingDeals ? "Checking..." : "Email New Deals"}</span>
               </button>
 
               <button
