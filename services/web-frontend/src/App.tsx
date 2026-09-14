@@ -53,9 +53,26 @@ const PRESET_DESTINATIONS = [
   "Mississauga City Centre, ON",
 ];
 
+function getInitialUserId(): string {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const param = urlParams.get("user") || urlParams.get("u");
+    if (param && /^[a-zA-Z0-9_-]{1,64}$/.test(param)) {
+      return param;
+    }
+    const saved = localStorage.getItem("commutenest_user_id");
+    if (saved && /^[a-zA-Z0-9_-]{1,64}$/.test(saved)) {
+      return saved;
+    }
+  } catch {
+    // ignore
+  }
+  return "mercer";
+}
+
 export function App() {
-  const [userId, setUserId] = useState("mercer");
-  const [activeUserId, setActiveUserId] = useState("mercer");
+  const [userId, setUserId] = useState(() => getInitialUserId());
+  const [activeUserId, setActiveUserId] = useState(() => getInitialUserId());
 
   // Core preferences
   const [maxRentUsd, setMaxRentUsd] = useState(1750);
@@ -107,6 +124,14 @@ export function App() {
   // Load preferences when activeUserId changes
   useEffect(() => {
     loadPreferences(activeUserId);
+    try {
+      localStorage.setItem("commutenest_user_id", activeUserId);
+      const url = new URL(window.location.href);
+      url.searchParams.set("user", activeUserId);
+      window.history.replaceState(null, "", url.toString());
+    } catch {
+      // ignore
+    }
   }, [activeUserId]);
 
   async function checkBackendHealth() {
@@ -184,10 +209,27 @@ export function App() {
         } else {
           triggerScan(targetUser, data)
             .then((res) => setMatchedListings(res.matches))
-            .catch(() => { });
+            .catch(() => {});
         }
       } else {
         setLastSavedRecord(null);
+        // Default clean state for fresh/new user
+        setMaxRentUsd(1800);
+        setMaxCommuteMinutes(35);
+        setTargetDestination("Union Station, Toronto, ON");
+        setTransitMode("transit");
+        setTransitModes(["bus", "subway", "train"]);
+        setSelectedTransitModes(["transit"]);
+        setNotificationEmail("");
+        resetMarketplaceFilters();
+        triggerScan(targetUser, {
+          maxRentUsd: 1800,
+          maxCommuteMinutes: 35,
+          targetDestination: "Union Station, Toronto, ON",
+          transitMode: "transit",
+        })
+          .then((res) => setMatchedListings(res.matches))
+          .catch(() => {});
       }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to load preferences");
@@ -369,7 +411,16 @@ export function App() {
                 </div>
 
                 {/* User ID Switcher */}
-                <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const trimmed = userId.trim();
+                    if (trimmed && trimmed !== activeUserId) {
+                      setActiveUserId(trimmed);
+                    }
+                  }}
+                  className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200"
+                >
                   {lastSavedRecord?.updatedAt && (
                     <span className="text-[10px] text-slate-400 hidden sm:inline px-1">
                       Synced {new Date(lastSavedRecord.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -382,17 +433,17 @@ export function App() {
                     onChange={(e) => setUserId(e.target.value)}
                     className="w-24 text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="user_id"
+                    title="Enter any username to create or switch to your private profile"
                   />
-                  {userId !== activeUserId && (
+                  {userId.trim() !== activeUserId && (
                     <button
-                      type="button"
-                      onClick={() => setActiveUserId(userId)}
+                      type="submit"
                       className="px-2.5 py-1 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
                     >
                       Load
                     </button>
                   )}
-                </div>
+                </form>
               </div>
 
               {errorMessage && (
