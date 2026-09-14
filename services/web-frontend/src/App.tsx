@@ -209,7 +209,7 @@ export function App() {
         } else {
           triggerScan(targetUser, data)
             .then((res) => setMatchedListings(res.matches))
-            .catch(() => {});
+            .catch(() => { });
         }
       } else {
         setLastSavedRecord(null);
@@ -229,7 +229,7 @@ export function App() {
           transitMode: "transit",
         })
           .then((res) => setMatchedListings(res.matches))
-          .catch(() => {});
+          .catch(() => { });
       }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to load preferences");
@@ -495,8 +495,8 @@ export function App() {
                         type="button"
                         onClick={() => setTargetDestination(preset)}
                         className={`text-xs px-2.5 py-0.5 rounded-full border transition ${targetDestination === preset
-                            ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                           }`}
                       >
                         {preset.split(",")[0]}
@@ -558,8 +558,8 @@ export function App() {
                           type="button"
                           onClick={() => toggleTransitMode(id as TransitMode)}
                           className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-1 transition relative ${isSelected
-                              ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
-                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                            ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
+                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                             }`}
                         >
                           {isSelected && (
@@ -688,8 +688,8 @@ export function App() {
                                   setMaxBedrooms(opt.max);
                                 }}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${isSelected
-                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                                   }`}
                               >
                                 {opt.label}
@@ -719,8 +719,8 @@ export function App() {
                                 type="button"
                                 onClick={() => setMinBathrooms(opt.val)}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${isSelected
-                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                                   }`}
                               >
                                 {opt.label}
@@ -784,8 +784,8 @@ export function App() {
                               type="button"
                               onClick={() => set(!state)}
                               className={`p-2 rounded-xl text-left border flex items-center space-x-2 transition ${state
-                                  ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold shadow-xs"
-                                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                                ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold shadow-xs"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                                 }`}
                             >
                               <Icon className={`w-3.5 h-3.5 shrink-0 ${state ? "text-indigo-600" : "text-slate-400"}`} />
@@ -917,8 +917,8 @@ export function App() {
                       <div
                         key={listing.id}
                         className={`p-4 rounded-2xl border transition-all ${listing.isGoodDeal
-                            ? "border-amber-200 bg-amber-50/20 shadow-sm hover:border-amber-300 hover:shadow"
-                            : "border-slate-200 bg-white shadow-xs hover:border-slate-300"
+                          ? "border-amber-200 bg-amber-50/20 shadow-sm hover:border-amber-300 hover:shadow"
+                          : "border-slate-200 bg-white shadow-xs hover:border-slate-300"
                           }`}
                       >
                         {/* Badges row */}
