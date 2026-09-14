@@ -1,28 +1,46 @@
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
+  Bath,
+  Bed,
   Bike,
   Bus,
   Car,
+  Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Compass,
+  Dog,
   DollarSign,
+  Dumbbell,
   ExternalLink,
   Flame,
   Footprints,
   Home,
-  Layers,
   Mail,
   MapPin,
+  Maximize2,
   RefreshCw,
   Save,
-  Send,
-  ShieldCheck,
+  Shirt,
+  SlidersHorizontal,
+  Sofa,
   Sparkles,
+  Sun,
   TrendingDown,
+  Waves,
+  Wind,
+  Zap,
 } from "lucide-react";
-import { API_BASE_URL, fetchHealth, fetchUserPreferences, saveUserPreferences, sendDealsEmail, triggerScan } from "./api.js";
+import {
+  fetchHealth,
+  fetchUserPreferences,
+  saveUserPreferences,
+  sendDealsEmail,
+  triggerScan,
+} from "./api.js";
 import type { MatchedListing, TransitMode, UserPreferences } from "./types.js";
 
 const PRESET_DESTINATIONS = [
@@ -30,21 +48,44 @@ const PRESET_DESTINATIONS = [
   "Financial District, Toronto, ON",
   "Yonge & Bloor, Toronto, ON",
   "U of T St. George, Toronto, ON",
+  "High Park, Toronto, ON",
+  "North York Centre, Toronto, ON",
+  "Mississauga City Centre, ON",
 ];
 
 export function App() {
   const [userId, setUserId] = useState("mercer");
   const [activeUserId, setActiveUserId] = useState("mercer");
 
-  // Form state
+  // Core preferences
   const [maxRentUsd, setMaxRentUsd] = useState(1750);
   const [maxCommuteMinutes, setMaxCommuteMinutes] = useState(30);
   const [targetDestination, setTargetDestination] = useState("Union Station, Toronto, ON");
   const [transitMode, setTransitMode] = useState<TransitMode>("transit");
   const [transitModes, setTransitModes] = useState<string[]>(["bus", "subway", "train"]);
-  const [notificationEmail, setNotificationEmail] = useState("demo@example.com");
+  const [selectedTransitModes, setSelectedTransitModes] = useState<TransitMode[]>(["transit"]);
+  const [notificationEmail, setNotificationEmail] = useState("mercer586@outlook.com");
 
-  // UI state
+  // Optional Marketplace filters
+  const [showMarketplaceFilters, setShowMarketplaceFilters] = useState(false);
+  const [minBedrooms, setMinBedrooms] = useState<number | undefined>(undefined);
+  const [maxBedrooms, setMaxBedrooms] = useState<number | undefined>(undefined);
+  const [minBathrooms, setMinBathrooms] = useState<number | undefined>(undefined);
+  const [minSquareFeet, setMinSquareFeet] = useState<number | undefined>(undefined);
+  const [maxSquareFeet, setMaxSquareFeet] = useState<number | undefined>(undefined);
+
+  // Amenities
+  const [hasGym, setHasGym] = useState(false);
+  const [hasPool, setHasPool] = useState(false);
+  const [hasLaundry, setHasLaundry] = useState(false);
+  const [utilitiesIncluded, setUtilitiesIncluded] = useState(false);
+  const [hasParking, setHasParking] = useState(false);
+  const [petFriendly, setPetFriendly] = useState(false);
+  const [furnished, setFurnished] = useState(false);
+  const [airConditioning, setAirConditioning] = useState(false);
+  const [hasBalcony, setHasBalcony] = useState(false);
+
+  // UI status
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [backendHealth, setBackendHealth] = useState<{ status: string; timestamp: string } | null>(null);
@@ -58,7 +99,7 @@ export function App() {
   const [isEmailingDeals, setIsEmailingDeals] = useState(false);
   const [emailSuccessMessage, setEmailSuccessMessage] = useState<string | null>(null);
 
-  // Check backend health on mount
+  // Health check on mount
   useEffect(() => {
     checkBackendHealth();
   }, []);
@@ -78,6 +119,32 @@ export function App() {
     }
   }
 
+  function getActiveFilterParams() {
+    return {
+      maxRentUsd,
+      maxCommuteMinutes,
+      targetDestination,
+      transitMode,
+      transitModes,
+      selectedTransitModes,
+      minBedrooms,
+      maxBedrooms,
+      minBathrooms,
+      minSquareFeet,
+      maxSquareFeet,
+      hasGym: hasGym || undefined,
+      hasPool: hasPool || undefined,
+      hasLaundry: hasLaundry || undefined,
+      utilitiesIncluded: utilitiesIncluded || undefined,
+      hasParking: hasParking || undefined,
+      petFriendly: petFriendly || undefined,
+      furnished: furnished || undefined,
+      airConditioning: airConditioning || undefined,
+      hasBalcony: hasBalcony || undefined,
+      notificationEmail: notificationEmail || undefined,
+    };
+  }
+
   async function loadPreferences(targetUser: string) {
     setIsLoading(true);
     setErrorMessage(null);
@@ -89,6 +156,25 @@ export function App() {
         setTargetDestination(data.targetDestination);
         setTransitMode(data.transitMode);
         setTransitModes(data.transitModes || ["bus", "subway", "train"]);
+        if (data.selectedTransitModes && data.selectedTransitModes.length > 0) {
+          setSelectedTransitModes(data.selectedTransitModes);
+        } else {
+          setSelectedTransitModes([data.transitMode]);
+        }
+        setMinBedrooms(data.minBedrooms);
+        setMaxBedrooms(data.maxBedrooms);
+        setMinBathrooms(data.minBathrooms);
+        setMinSquareFeet(data.minSquareFeet);
+        setMaxSquareFeet(data.maxSquareFeet);
+        setHasGym(Boolean(data.hasGym));
+        setHasPool(Boolean(data.hasPool));
+        setHasLaundry(Boolean(data.hasLaundry));
+        setUtilitiesIncluded(Boolean(data.utilitiesIncluded));
+        setHasParking(Boolean(data.hasParking));
+        setPetFriendly(Boolean(data.petFriendly));
+        setFurnished(Boolean(data.furnished));
+        setAirConditioning(Boolean(data.airConditioning));
+        setHasBalcony(Boolean(data.hasBalcony));
         if (data.notificationEmail) {
           setNotificationEmail(data.notificationEmail);
         }
@@ -96,16 +182,9 @@ export function App() {
         if (data.recentMatches && data.recentMatches.length > 0) {
           setMatchedListings(data.recentMatches);
         } else {
-          // Trigger scan to populate initial matches
-          triggerScan(targetUser, {
-            maxRentUsd: data.maxRentUsd,
-            maxCommuteMinutes: data.maxCommuteMinutes,
-            targetDestination: data.targetDestination,
-            transitMode: data.transitMode,
-            transitModes: data.transitModes,
-          })
+          triggerScan(targetUser, data)
             .then((res) => setMatchedListings(res.matches))
-            .catch(() => { });
+            .catch(() => {});
         }
       } else {
         setLastSavedRecord(null);
@@ -122,15 +201,12 @@ export function App() {
     setErrorMessage(null);
     setScanSuccessMessage(null);
     try {
-      const result = await triggerScan(activeUserId, {
-        maxRentUsd,
-        maxCommuteMinutes,
-        targetDestination,
-        transitMode,
-        transitModes,
-      });
+      const params = getActiveFilterParams();
+      const result = await triggerScan(activeUserId, params);
       setMatchedListings(result.matches);
-      setScanSuccessMessage(`Found ${result.count} matching apartment${result.count === 1 ? "" : "s"} within ${maxCommuteMinutes} mins!`);
+      setScanSuccessMessage(
+        `Found ${result.count} matching apartment${result.count === 1 ? "" : "s"} across all sources within ${maxCommuteMinutes} mins!`,
+      );
       setTimeout(() => setScanSuccessMessage(null), 5000);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to scan listings");
@@ -145,8 +221,12 @@ export function App() {
     setEmailSuccessMessage(null);
     try {
       const result = await sendDealsEmail(activeUserId);
-      setEmailSuccessMessage(result.message || `Sent ${result.dealsCount} top deal(s) to your verified email!`);
-      setEmailSuccessMessage(result.message || (result.sent ? "Dispatched new top deal(s) to your verified email!" : "All top deals have already been emailed. You are up to date!"));
+      setEmailSuccessMessage(
+        result.message ||
+          (result.sent
+            ? "Dispatched new top deal(s) to your verified email!"
+            : "All top deals have already been emailed. You are up to date!"),
+      );
       setTimeout(() => setEmailSuccessMessage(null), 6000);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to send deals email");
@@ -162,28 +242,16 @@ export function App() {
     setSaveSuccess(false);
 
     try {
-      const saved = await saveUserPreferences(activeUserId, {
-        maxRentUsd,
-        maxCommuteMinutes,
-        targetDestination,
-        transitMode,
-        transitModes,
-        notificationEmail: notificationEmail || undefined,
-      });
+      const params = getActiveFilterParams();
+      const saved = await saveUserPreferences(activeUserId, params);
       setLastSavedRecord(saved);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
 
       // Refresh matched listings with new criteria
-      triggerScan(activeUserId, {
-        maxRentUsd,
-        maxCommuteMinutes,
-        targetDestination,
-        transitMode,
-        transitModes,
-      })
+      triggerScan(activeUserId, params)
         .then((res) => setMatchedListings(res.matches))
-        .catch(() => { });
+        .catch(() => {});
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to save preferences");
     } finally {
@@ -197,11 +265,59 @@ export function App() {
     );
   }
 
+  function toggleTransitMode(mode: TransitMode) {
+    setSelectedTransitModes((prev) => {
+      let updated: TransitMode[];
+      if (prev.includes(mode)) {
+        if (prev.length === 1) return prev; // Keep at least one selected
+        updated = prev.filter((m) => m !== mode);
+      } else {
+        updated = [...prev, mode];
+      }
+      setTransitMode(updated[0]);
+      return updated;
+    });
+  }
+
+  function resetMarketplaceFilters() {
+    setMinBedrooms(undefined);
+    setMaxBedrooms(undefined);
+    setMinBathrooms(undefined);
+    setMinSquareFeet(undefined);
+    setMaxSquareFeet(undefined);
+    setHasGym(false);
+    setHasPool(false);
+    setHasLaundry(false);
+    setUtilitiesIncluded(false);
+    setHasParking(false);
+    setPetFriendly(false);
+    setFurnished(false);
+    setAirConditioning(false);
+    setHasBalcony(false);
+  }
+
+  const activeMarketplaceFilterCount = [
+    minBedrooms !== undefined,
+    maxBedrooms !== undefined,
+    minBathrooms !== undefined,
+    minSquareFeet !== undefined,
+    maxSquareFeet !== undefined,
+    hasGym,
+    hasPool,
+    hasLaundry,
+    utilitiesIncluded,
+    hasParking,
+    petFriendly,
+    furnished,
+    airConditioning,
+    hasBalcony,
+  ].filter(Boolean).length;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
       {/* Top Navigation */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
               <Home className="w-5 h-5" />
@@ -213,7 +329,7 @@ export function App() {
                   Cloud Live
                 </span>
               </div>
-              <p className="text-xs text-slate-500">Serverless Commute-Optimized Housing Alert Engine</p>
+              <p className="text-xs text-slate-500">Multi-Source Housing Search &amp; Deal Engine</p>
             </div>
           </div>
 
@@ -239,106 +355,215 @@ export function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Preferences Form */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-100 gap-4">
+          <div className="lg:col-span-6 space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 border-b border-slate-100 gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">Alert Preferences</h2>
-                  <p className="text-sm text-slate-500 mt-0.5">
-                    Customize your housing search criteria stored in DynamoDB
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">Search &amp; Alert Engine</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Customize search filters across Craigslist, Kijiji &amp; Public feeds
                   </p>
                 </div>
 
-                {/* User Selector */}
+                {/* User ID Switcher */}
                 <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider pl-2">
-                    User:
-                  </span>
+                  {lastSavedRecord?.updatedAt && (
+                    <span className="text-[10px] text-slate-400 hidden sm:inline px-1">
+                      Synced {new Date(lastSavedRecord.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-slate-500 pl-1">User:</span>
                   <input
                     type="text"
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
-                    className="text-xs font-mono font-medium px-2 py-1 rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24 text-slate-800"
-                    placeholder="userId"
+                    className="w-24 text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="user_id"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setActiveUserId(userId)}
-                    disabled={isLoading || !userId.trim()}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 transition"
-                  >
-                    Switch
-                  </button>
+                  {userId !== activeUserId && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveUserId(userId)}
+                      className="px-2.5 py-1 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    >
+                      Load
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Status messages */}
               {errorMessage && (
-                <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-rose-500" />
-                  <div>
-                    <p className="font-medium">Error saving preferences</p>
-                    <p className="text-xs mt-0.5 text-rose-700">{errorMessage}</p>
-                  </div>
+                <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{errorMessage}</span>
                 </div>
               )}
 
               {saveSuccess && (
-                <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center space-x-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                  <p className="font-medium">
-                    Preferences successfully saved to DynamoDB! The ingestion worker will use these on the next run.
-                  </p>
+                <div className="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Preferences saved successfully to DynamoDB!</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Target Destination */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Free-form Target Destination */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Target Destination
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-semibold text-slate-900">
+                      Destination / Work Location
+                    </label>
+                    <span className="text-xs text-indigo-600 font-medium">Free-form GTA Search</span>
+                  </div>
                   <div className="relative">
-                    <MapPin className="w-5 h-5 text-slate-400 absolute left-3 top-3" />
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
                       type="text"
+                      list="preset-destinations"
                       required
                       value={targetDestination}
                       onChange={(e) => setTargetDestination(e.target.value)}
-                      placeholder="e.g. Union Station, Toronto, ON"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      placeholder="Type ANY address, station, or neighbourhood..."
+                      className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     />
+                    <datalist id="preset-destinations">
+                      {PRESET_DESTINATIONS.map((preset) => (
+                        <option key={preset} value={preset} />
+                      ))}
+                    </datalist>
                   </div>
 
                   {/* Destination Chips */}
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {PRESET_DESTINATIONS.map((preset) => (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {PRESET_DESTINATIONS.slice(0, 5).map((preset) => (
                       <button
                         key={preset}
                         type="button"
                         onClick={() => setTargetDestination(preset)}
-                        className={`text-xs px-2.5 py-1 rounded-full border transition ${targetDestination === preset
-                          ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                          }`}
+                        className={`text-xs px-2.5 py-0.5 rounded-full border transition ${
+                          targetDestination === preset
+                            ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                        }`}
                       >
-                        {preset}
+                        {preset.split(",")[0]}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Max Monthly Rent Slider */}
+                {/* Commute Time Slider */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-semibold text-slate-900 flex items-center space-x-1.5">
+                      <Clock className="w-4 h-4 text-slate-500" />
+                      <span>Maximum Commute Time</span>
+                    </label>
+                    <span className="text-sm font-bold text-indigo-600 font-mono">
+                      {maxCommuteMinutes}
+                      <span className="text-xs text-slate-400 font-normal"> min</span>
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="90"
+                    step="5"
+                    value={maxCommuteMinutes}
+                    onChange={(e) => setMaxCommuteMinutes(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <div className="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>10m</span>
+                    <span>45m</span>
+                    <span>90m</span>
+                  </div>
+                </div>
+
+                {/* Multi-Modal Transit Modes Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-semibold text-slate-900">
+                      Modes of Transportation
+                    </label>
+                    <span className="text-xs text-slate-500">Multi-select enabled</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">
+                    Select multiple modes to enforce that listings are reachable within {maxCommuteMinutes} mins by <strong>ALL</strong> selected modes (e.g. within 15 min walk AND drive).
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: "transit", label: "Transit", icon: Bus },
+                      { id: "driving", label: "Driving", icon: Car },
+                      { id: "walking", label: "Walking", icon: Footprints },
+                      { id: "bicycling", label: "Biking", icon: Bike },
+                    ].map(({ id, label, icon: Icon }) => {
+                      const isSelected = selectedTransitModes.includes(id as TransitMode);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => toggleTransitMode(id as TransitMode)}
+                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-1 transition relative ${
+                            isSelected
+                              ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {isSelected && (
+                            <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[9px]">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </span>
+                          )}
+                          <Icon className="w-4 h-4" />
+                          <span className="text-xs font-semibold">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedTransitModes.includes("transit") && (
+                    <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <p className="text-[11px] font-semibold text-slate-600 mb-1.5">
+                        Transit Options:
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {["bus", "subway", "train"].map((submode) => (
+                          <label key={submode} className="flex items-center space-x-1.5 text-xs text-slate-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={transitModes.includes(submode)}
+                              onChange={() => handleSubmodeToggle(submode)}
+                              className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                            />
+                            <span className="capitalize">{submode}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTransitModes.length > 1 && (
+                    <div className="mt-2 px-3 py-1.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-indigo-800 text-xs flex items-center space-x-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>
+                        Matching listings will be verified for <strong>{selectedTransitModes.join(" AND ")}</strong>.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Monthly Rent Slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
                     <label className="text-sm font-semibold text-slate-900 flex items-center space-x-1.5">
                       <DollarSign className="w-4 h-4 text-slate-500" />
                       <span>Maximum Monthly Rent</span>
                     </label>
-                    <span className="text-base font-bold text-indigo-600 font-mono">
+                    <span className="text-sm font-bold text-indigo-600 font-mono">
                       ${maxRentUsd.toLocaleString()}
                       <span className="text-xs text-slate-400 font-normal"> /mo</span>
                     </span>
@@ -359,408 +584,507 @@ export function App() {
                   </div>
                 </div>
 
-                {/* Max Commute Time Slider */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center space-x-1.5">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      <span>Maximum Commute Time</span>
-                    </label>
-                    <span className="text-base font-bold text-indigo-600 font-mono">
-                      {maxCommuteMinutes}
-                      <span className="text-xs text-slate-400 font-normal"> minutes</span>
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="90"
-                    step="5"
-                    value={maxCommuteMinutes}
-                    onChange={(e) => setMaxCommuteMinutes(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>10m</span>
-                    <span>45m</span>
-                    <span>90m</span>
-                  </div>
-                </div>
+                {/* Expandable Marketplace Filters Accordion */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+                  <button
+                    type="button"
+                    onClick={() => setShowMarketplaceFilters(!showMarketplaceFilters)}
+                    className="w-full px-4 py-3 bg-white flex items-center justify-between hover:bg-slate-50 transition border-b border-slate-100"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-bold text-slate-900">
+                        Marketplace Filters (Beds, Baths, Sqft, Amenities)
+                      </span>
+                      {activeMarketplaceFilterCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                          {activeMarketplaceFilterCount} active
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-slate-400 font-normal">Optional</span>
+                      {showMarketplaceFilters ? (
+                        <ChevronUp className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
 
-                {/* Transit Mode Selection */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Preferred Mode of Transit
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {[
-                      { id: "transit", label: "Public Transit", icon: Bus },
-                      { id: "driving", label: "Driving", icon: Car },
-                      { id: "bicycling", label: "Bicycling", icon: Bike },
-                      { id: "walking", label: "Walking", icon: Footprints },
-                    ].map(({ id, label, icon: Icon }) => (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => setTransitMode(id as TransitMode)}
-                        className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1.5 transition ${transitMode === id
-                          ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                          }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span className="text-xs font-semibold">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {transitMode === "transit" && (
-                    <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                      <p className="text-xs font-semibold text-slate-600 mb-2">
-                        Included Transit Types:
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        {["bus", "subway", "train"].map((submode) => (
-                          <label key={submode} className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={transitModes.includes(submode)}
-                              onChange={() => handleSubmodeToggle(submode)}
-                              className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                            />
-                            <span className="capitalize">{submode}</span>
-                          </label>
-                        ))}
+                  {showMarketplaceFilters && (
+                    <div className="p-4 sm:p-5 space-y-4 bg-white animate-fade-in">
+                      {/* Bedrooms */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center space-x-1.5">
+                          <Bed className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Number of Bedrooms</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { label: "Any", min: undefined, max: undefined },
+                            { label: "Studio", min: 0, max: 0 },
+                            { label: "1 Bed", min: 1, max: 1 },
+                            { label: "2 Beds", min: 2, max: 2 },
+                            { label: "3+ Beds", min: 3, max: undefined },
+                          ].map((opt) => {
+                            const isSelected =
+                              minBedrooms === opt.min && maxBedrooms === opt.max;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => {
+                                  setMinBedrooms(opt.min);
+                                  setMaxBedrooms(opt.max);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                                  isSelected
+                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
+
+                      {/* Bathrooms */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center space-x-1.5">
+                          <Bath className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Bathrooms</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { label: "Any", val: undefined },
+                            { label: "1+ Bath", val: 1 },
+                            { label: "1.5+ Baths", val: 1.5 },
+                            { label: "2+ Baths", val: 2 },
+                          ].map((opt) => {
+                            const isSelected = minBathrooms === opt.val;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => setMinBathrooms(opt.val)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                                  isSelected
+                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Square Footage */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center space-x-1.5">
+                          <Maximize2 className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Square Footage (sq ft)</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="number"
+                            min="0"
+                            step="50"
+                            placeholder="Min sq ft (e.g. 500)"
+                            value={minSquareFeet ?? ""}
+                            onChange={(e) =>
+                              setMinSquareFeet(e.target.value ? Number(e.target.value) : undefined)
+                            }
+                            className="px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="50"
+                            placeholder="Max sq ft (e.g. 1200)"
+                            value={maxSquareFeet ?? ""}
+                            onChange={(e) =>
+                              setMaxSquareFeet(e.target.value ? Number(e.target.value) : undefined)
+                            }
+                            className="px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Amenities Grid */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-2">
+                          Building &amp; Unit Amenities (Optional)
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {[
+                            { label: "Gym in building", state: hasGym, set: setHasGym, icon: Dumbbell },
+                            { label: "Swimming Pool", state: hasPool, set: setHasPool, icon: Waves },
+                            { label: "In-unit / Building Laundry", state: hasLaundry, set: setHasLaundry, icon: Shirt },
+                            { label: "Utilities Included", state: utilitiesIncluded, set: setUtilitiesIncluded, icon: Zap },
+                            { label: "Parking Included", state: hasParking, set: setHasParking, icon: Car },
+                            { label: "Pet Friendly", state: petFriendly, set: setPetFriendly, icon: Dog },
+                            { label: "Furnished Suite", state: furnished, set: setFurnished, icon: Sofa },
+                            { label: "Air Conditioning", state: airConditioning, set: setAirConditioning, icon: Wind },
+                            { label: "Balcony / Terrace", state: hasBalcony, set: setHasBalcony, icon: Sun },
+                          ].map(({ label, state, set, icon: Icon }) => (
+                            <button
+                              key={label}
+                              type="button"
+                              onClick={() => set(!state)}
+                              className={`p-2 rounded-xl text-left border flex items-center space-x-2 transition ${
+                                state
+                                  ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold shadow-xs"
+                                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                              }`}
+                            >
+                              <Icon className={`w-3.5 h-3.5 shrink-0 ${state ? "text-indigo-600" : "text-slate-400"}`} />
+                              <span className="text-[11px] truncate">{label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {activeMarketplaceFilterCount > 0 && (
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={resetMarketplaceFilters}
+                            className="text-xs text-rose-600 hover:text-rose-700 font-semibold"
+                          >
+                            Reset Marketplace Filters
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
                 {/* Alert Notification Email */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Alert Notification Email
+                  <label className="block text-sm font-semibold text-slate-900 mb-1.5">
+                    Alert Notification Email (SNS Verified)
                   </label>
                   <div className="relative">
-                    <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-3" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
                       type="email"
                       value={notificationEmail}
                       onChange={(e) => setNotificationEmail(e.target.value)}
                       placeholder="you@outlook.com"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Free Tier compliant via Amazon SNS email protocol (1,000 free emails/mo).
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Instant alerts via AWS SNS are dispatched exclusively for <strong>NEW good deals</strong>.
                   </p>
                 </div>
 
-                {/* Submit button */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <div className="text-xs text-slate-400">
-                    {lastSavedRecord?.updatedAt ? (
-                      <span>Last updated: {new Date(lastSavedRecord.updatedAt).toLocaleTimeString()}</span>
-                    ) : (
-                      <span>Not yet saved</span>
-                    )}
-                  </div>
-
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                   <button
                     type="submit"
                     disabled={isSaving || isLoading}
-                    className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 active:bg-indigo-800 shadow-md shadow-indigo-200 disabled:opacity-50 transition"
+                    className="w-full sm:w-1/2 flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 hover:shadow-lg transition disabled:opacity-50"
                   >
-                    {isSaving ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        <span>Save Preferences</span>
-                      </>
-                    )}
+                    <Save className="w-4 h-4" />
+                    <span>{isSaving ? "Saving to Cloud..." : "Save Preferences"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleScanNow}
+                    disabled={isScanning || isLoading}
+                    className="w-full sm:w-1/2 flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isScanning ? "animate-spin" : ""}`} />
+                    <span>{isScanning ? "Searching Multi-Source..." : "Scan Deals Now"}</span>
                   </button>
                 </div>
               </form>
             </div>
           </div>
 
-          {/* Right Column: Architecture & Pipeline Live Status */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Serverless Architecture Card */}
+          {/* Right Column: Live Listings Feed */}
+          <div className="lg:col-span-6 space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-7">
-              <div className="flex items-center space-x-2.5 mb-4">
-                <Layers className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900">Serverless Architecture</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-xl font-bold text-slate-900 tracking-tight">Live Matches</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {matchedListings.length} found
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Craigslist, Kijiji &amp; Public feeds • Direct listing links
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleEmailDeals}
+                  disabled={isEmailingDeals || isScanning}
+                  className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm transition disabled:opacity-50"
+                  title="Email newly discovered top deals that haven't been sent yet"
+                >
+                  <Mail className={`w-3.5 h-3.5 ${isEmailingDeals ? "animate-bounce" : ""}`} />
+                  <span>{isEmailingDeals ? "Checking..." : "Email New Deals"}</span>
+                </button>
               </div>
-              <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-                CommuteNest runs continuously on AWS Serverless infrastructure with automated lifecycle management.
-              </p>
 
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700 mt-0.5">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">EventBridge Cron Rule</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Invokes the Ingestion Lambda on a recurring 30-minute rate schedule.
-                    </p>
-                  </div>
+              {/* Status alerts */}
+              {emailSuccessMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2 animate-fade-in shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>{emailSuccessMessage}</span>
                 </div>
+              )}
 
-                <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700 mt-0.5">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">DynamoDB Deduplication &amp; TTL</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Prevents duplicate alerts. Old listings automatically purge after 30 days.
-                    </p>
-                  </div>
+              {scanSuccessMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2 animate-fade-in shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{scanSuccessMessage}</span>
                 </div>
+              )}
 
-                <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="p-2 rounded-lg bg-amber-100 text-amber-700 mt-0.5">
-                    <Send className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Good Deals Email Alerts Only</h4>
-                    <h4 className="text-xs font-bold text-slate-900">Strict &ldquo;New Deals Only&rdquo; Email Alerts</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      To prevent inbox spam, email notifications via Amazon SNS are sent exclusively for NEW listings that are verified high-value deals ($100+ savings or top 25% fastest commutes).
-                      To eliminate spam, email notifications via Amazon SNS are sent exclusively for NEW listings that are verified high-value deals ($100+ savings or top 25% fastest commutes). Old or previously emailed listings are never re-sent.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              {/* Listings Cards List */}
+              {matchedListings.length > 0 ? (
+                <div className="space-y-4">
+                  {matchedListings.map((listing) => {
+                    const savings = maxRentUsd - listing.priceUsd;
+                    const sourceName = listing.sourceName || "Craigslist";
+                    const sourceColor =
+                      sourceName.toLowerCase().includes("kijiji")
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : sourceName.toLowerCase().includes("padmapper") || sourceName.toLowerCase().includes("syndication")
+                        ? "bg-sky-50 text-sky-700 border-sky-200"
+                        : sourceName.toLowerCase().includes("toronto rentals")
+                        ? "bg-teal-50 text-teal-700 border-teal-200"
+                        : "bg-purple-50 text-purple-700 border-purple-200";
 
-            {/* Active Cloud Configuration Summary */}
-            <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-6 sm:p-7 shadow-lg">
-              <h3 className="font-bold text-sm tracking-wide text-indigo-200 uppercase mb-4">
-                Active Live Configuration
-              </h3>
+                    return (
+                      <div
+                        key={listing.id}
+                        className={`p-4 rounded-2xl border transition-all ${
+                          listing.isGoodDeal
+                            ? "border-amber-200 bg-amber-50/20 shadow-sm hover:border-amber-300 hover:shadow"
+                            : "border-slate-200 bg-white shadow-xs hover:border-slate-300"
+                        }`}
+                      >
+                        {/* Badges row */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${sourceColor}`}>
+                              {sourceName}
+                            </span>
+                            {listing.isGoodDeal && (
+                              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                <Flame className="w-3 h-3 text-amber-600 fill-amber-500 mr-0.5" />
+                                Top Deal
+                              </span>
+                            )}
+                            {savings > 0 && (
+                              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                <TrendingDown className="w-3 h-3 mr-0.5" />
+                                ${savings} under budget
+                              </span>
+                            )}
+                          </div>
 
-              <dl className="space-y-3 text-xs">
-                <div className="flex justify-between pb-2 border-b border-indigo-800/60">
-                  <dt className="text-indigo-300">Active Profile</dt>
-                  <dd className="font-mono font-medium text-white">{activeUserId}</dd>
+                          <div className="text-right">
+                            <span className="text-base font-extrabold text-slate-900">${listing.priceUsd}</span>
+                            <span className="text-[11px] text-slate-400"> /mo</span>
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="font-bold text-slate-900 text-sm hover:text-indigo-600 transition-colors line-clamp-2">
+                          {listing.title}
+                        </h3>
+
+                        {/* Specs: Bed / Bath / Sqft */}
+                        <div className="flex items-center gap-3 text-xs text-slate-600 mt-2">
+                          <span className="flex items-center space-x-1 font-medium">
+                            <Bed className="w-3.5 h-3.5 text-slate-400" />
+                            <span>
+                              {listing.bedrooms === 0
+                                ? "Studio"
+                                : listing.bedrooms !== undefined
+                                ? `${listing.bedrooms} Bed`
+                                : "Studio/1BR"}
+                            </span>
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1 font-medium">
+                            <Bath className="w-3.5 h-3.5 text-slate-400" />
+                            <span>
+                              {listing.bathrooms !== undefined ? `${listing.bathrooms} Bath` : "1 Bath"}
+                            </span>
+                          </span>
+                          {listing.squareFeet && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center space-x-1 font-medium">
+                                <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{listing.squareFeet} sq ft</span>
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Amenities Tags */}
+                        {listing.amenities && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {listing.amenities.gym && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🏋️ Gym
+                              </span>
+                            )}
+                            {listing.amenities.pool && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🏊 Pool
+                              </span>
+                            )}
+                            {listing.amenities.laundry && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🧺 Laundry
+                              </span>
+                            )}
+                            {listing.amenities.utilitiesIncluded && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                💡 Utilities Incl.
+                              </span>
+                            )}
+                            {listing.amenities.parking && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🅿️ Parking
+                              </span>
+                            )}
+                            {listing.amenities.petFriendly && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🐾 Pets
+                              </span>
+                            )}
+                            {listing.amenities.furnished && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🛋️ Furnished
+                              </span>
+                            )}
+                            {listing.amenities.airConditioning && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                ❄️ A/C
+                              </span>
+                            )}
+                            {listing.amenities.balcony && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                🌇 Balcony
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Deal reason callout */}
+                        {listing.dealReason && (
+                          <div className="mt-2 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium flex items-center space-x-1.5">
+                            <Flame className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span className="truncate">{listing.dealReason}</span>
+                          </div>
+                        )}
+
+                        {/* Address */}
+                        <p className="text-xs text-slate-500 mt-2 flex items-center">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0" />
+                          <span className="truncate">{listing.address}</span>
+                        </p>
+
+                        {/* Commute Summary & Breakdown */}
+                        <div className="mt-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 flex items-center justify-between">
+                          <div className="flex items-center space-x-1.5 truncate">
+                            <Compass className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <span className="font-medium truncate">{listing.commuteSummary}</span>
+                          </div>
+                          {listing.commuteBreakdown && (
+                            <div className="flex items-center space-x-2 shrink-0 text-[11px] text-slate-500 font-medium pl-2">
+                              {listing.commuteBreakdown.transit !== undefined && (
+                                <span>🚇 {listing.commuteBreakdown.transit}m</span>
+                              )}
+                              {listing.commuteBreakdown.driving !== undefined && (
+                                <span>🚗 {listing.commuteBreakdown.driving}m</span>
+                              )}
+                              {listing.commuteBreakdown.walking !== undefined && (
+                                <span>🚶 {listing.commuteBreakdown.walking}m</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Link Button */}
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 flex justify-end">
+                          <a
+                            href={listing.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition"
+                          >
+                            <span>Open Direct Post</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between pb-2 border-b border-indigo-800/60">
-                  <dt className="text-indigo-300">Budget Ceiling</dt>
-                  <dd className="font-mono font-medium text-emerald-400">${maxRentUsd}/mo</dd>
+              ) : (
+                <div className="text-center py-10 px-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">No Listings Matched Current Filters</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                    Try broadening your rent budget or clearing some optional marketplace filters.
+                  </p>
+                  <div className="mt-4 flex items-center justify-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMaxRentUsd(2500);
+                        setMaxCommuteMinutes(45);
+                        resetMarketplaceFilters();
+                      }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                    >
+                      Reset Filters &amp; Broaden Search
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-between pb-2 border-b border-indigo-800/60">
-                  <dt className="text-indigo-300">Commute Cap</dt>
-                  <dd className="font-mono font-medium text-white">{maxCommuteMinutes} minutes</dd>
-                </div>
-                <div className="flex justify-between pb-2 border-b border-indigo-800/60">
-                  <dt className="text-indigo-300">Target Hub</dt>
-                  <dd className="font-medium text-right text-indigo-100 truncate max-w-[180px]">
-                    {targetDestination}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-indigo-300">API Endpoint</dt>
-                  <dd className="font-mono text-[10px] text-indigo-200 truncate max-w-[180px]">
-                    {API_BASE_URL}
-                  </dd>
-                </div>
-              </dl>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Live Matched Listings Feed */}
-        <section id="matched-listings" className="mt-12 pt-10 border-t border-slate-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
-                  <Sparkles className="w-5 h-5" />
-                </span>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                  Live Matched Apartments
-                </h2>
-                <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  {matchedListings.length} Available
-                </span>
-              </div>
-              <p className="text-sm text-slate-500 mt-1">
-                All matching apartments render below. Instant email alerts trigger strictly for <strong className="text-amber-600 font-semibold">🔥 Top Deals</strong>.
-                All matching apartments render below with direct listing links. Instant email alerts trigger strictly for <strong className="text-amber-600 font-semibold">NEW Top Deals</strong>.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleEmailDeals}
-                disabled={isEmailingDeals || isScanning}
-                className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm hover:shadow transition disabled:opacity-50"
-                title="Email only high-value deals ($100+ savings or top commutes) to your address"
-                title="Email only newly discovered good deals that haven't been emailed yet"
-              >
-                <Mail className={`w-4 h-4 ${isEmailingDeals ? "animate-bounce" : ""}`} />
-                <span>{isEmailingDeals ? "Sending Deals..." : "Email Me Top Deals"}</span>
-                <span>{isEmailingDeals ? "Checking..." : "Email New Deals"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleScanNow}
-                disabled={isScanning || isEmailingDeals}
-                className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${isScanning ? "animate-spin" : ""}`} />
-                <span>{isScanning ? "Scanning Feeds..." : "Scan for Matches"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Success toasts / notifications */}
-          {emailSuccessMessage && (
-            <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center space-x-2 animate-fade-in shadow-sm">
-              <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
-              <span>{emailSuccessMessage}</span>
-            </div>
-          )}
-
-          {scanSuccessMessage && (
-            <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center space-x-2 animate-fade-in shadow-sm">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>{scanSuccessMessage}</span>
-            </div>
-          )}
-
-          {/* Listings Cards Grid */}
-          {matchedListings.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matchedListings.map((listing) => {
-                const savings = maxRentUsd - listing.priceUsd;
-                return (
-                  <div
-                    key={listing.id}
-                    className={`bg-white rounded-2xl border transition-all flex flex-col justify-between overflow-hidden group ${listing.isGoodDeal
-                        ? "border-amber-200 shadow-md shadow-amber-500/5 hover:border-amber-300 hover:shadow-lg"
-                        : "border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300"
-                      }`}
-                  >
-                    <div className="p-5 sm:p-6">
-                      {/* Top Badges */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                            <Clock className="w-3.5 h-3.5 mr-1" />
-                            {listing.commuteMinutes} min commute
-                          </span>
-                          {listing.isGoodDeal && (
-                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                              <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500 mr-1" />
-                              Top Deal
-                            </span>
-                          )}
-                        </div>
-                        {savings > 0 && (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            <TrendingDown className="w-3.5 h-3.5 mr-1" />
-                            ${savings} under budget
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-2">
-                        {listing.title}
-                      </h3>
-
-                      {/* Deal highlight callout */}
-                      {listing.dealReason && (
-                        <div className="mt-2.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-xs text-amber-900 font-medium flex items-center space-x-1.5">
-                          <Flame className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <span className="truncate">{listing.dealReason}</span>
-                        </div>
-                      )}
-
-                      {/* Address */}
-                      <p className="text-xs text-slate-500 mt-2.5 flex items-center">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0" />
-                        <span className="truncate">{listing.address}</span>
-                      </p>
-
-                      {/* Commute Summary Pill */}
-                      <div className="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 flex items-center space-x-2">
-                        <Compass className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span className="font-medium">{listing.commuteSummary}</span>
-                      </div>
-                    </div>
-
-                    {/* Footer with Price and Action */}
-                    <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-lg font-extrabold text-slate-900">${listing.priceUsd}</span>
-                        <span className="text-xs text-slate-400 font-medium"> / month</span>
-                      </div>
-
-                      <a
-                        href={listing.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 shadow-sm transition"
-                      >
-                        <span>View Listing</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12 px-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                <Home className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">No Listings Matched Current Criteria</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1.5">
-                No apartments currently meet a maximum rent of <strong className="text-slate-700">${maxRentUsd}/mo</strong> and a <strong className="text-slate-700">{maxCommuteMinutes}-minute</strong> travel time to {targetDestination.split(",")[0]}.
-              </p>
-              <div className="mt-5 flex items-center justify-center space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMaxRentUsd(2200);
-                    setMaxCommuteMinutes(40);
-                  }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-                >
-                  Broaden to $2,200 &amp; 40 min
-                </button>
-                <button
-                  type="button"
-                  onClick={handleScanNow}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition"
-                >
-                  Scan Now
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        <p>CommuteNest Serverless Portfolio Project &bull; Built with AWS Lambda, DynamoDB, API Gateway, SNS, React &amp; Tailwind</p>
+      <footer className="bg-white border-t border-slate-200 py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="flex items-center space-x-2">
+            <span className="font-bold text-slate-600">CommuteNest</span>
+            <span>•</span>
+            <span>Free Tier ($0.00) Production Architecture</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span>AWS us-east-1</span>
+            <span>API Gateway</span>
+            <span>DynamoDB</span>
+            <span>Amazon SNS</span>
+            <span>CloudFront</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
-
-export default App;

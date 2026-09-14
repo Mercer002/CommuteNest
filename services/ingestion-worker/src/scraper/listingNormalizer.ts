@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Listing, RawListing } from "../types.js";
+import type { Listing, ListingAmenities, RawListing } from "../types.js";
 
 export function normalizeRawListing(raw: RawListing): Listing | null {
   const searchableText = [raw.title, raw.description].filter(Boolean).join("\n");
@@ -10,6 +10,11 @@ export function normalizeRawListing(raw: RawListing): Listing | null {
     return null;
   }
 
+  const bedrooms = raw.bedrooms ?? extractBedrooms(searchableText);
+  const bathrooms = raw.bathrooms ?? extractBathrooms(searchableText);
+  const squareFeet = raw.squareFeet ?? extractSquareFeet(searchableText);
+  const amenities = raw.amenities ?? extractAmenities(searchableText);
+
   return {
     id: stableListingId(raw),
     sourceName: raw.sourceName,
@@ -19,6 +24,10 @@ export function normalizeRawListing(raw: RawListing): Listing | null {
     publishedAt: raw.publishedAt,
     address: cleanWhitespace(address),
     priceUsd,
+    bedrooms,
+    bathrooms,
+    squareFeet,
+    amenities,
   };
 }
 
@@ -88,4 +97,67 @@ function isRentContext(context: string): boolean {
 
 function isNonRentContext(context: string): boolean {
   return /\b(deposit|security|fee|application|broker|utilities)\b/.test(context);
+}
+
+export function extractBedrooms(text: string): number | undefined {
+  const normalized = stripHtml(text).toLowerCase();
+  if (/\b(studio|bachelor)\b/i.test(normalized)) {
+    return 0;
+  }
+  const digitMatch = normalized.match(/\b([0-9])\s*(?:bed|bedroom|br|bdr)\b/i);
+  if (digitMatch?.[1]) {
+    return Number.parseInt(digitMatch[1], 10);
+  }
+  const wordMatches: Record<string, number> = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+  };
+  const wordMatch = normalized.match(/\b(one|two|three|four)\s*(?:bed|bedroom|br|bdr)\b/i);
+  if (wordMatch?.[1] && wordMatches[wordMatch[1]]) {
+    return wordMatches[wordMatch[1]];
+  }
+  return undefined;
+}
+
+export function extractBathrooms(text: string): number | undefined {
+  const normalized = stripHtml(text).toLowerCase();
+  const digitMatch = normalized.match(/\b([0-9](?:\.5)?)\s*(?:bath|bathroom|ba|bth)\b/i);
+  if (digitMatch?.[1]) {
+    return Number.parseFloat(digitMatch[1]);
+  }
+  const wordMatches: Record<string, number> = {
+    one: 1,
+    two: 2,
+  };
+  const wordMatch = normalized.match(/\b(one|two)\s*(?:bath|bathroom|ba|bth)\b/i);
+  if (wordMatch?.[1] && wordMatches[wordMatch[1]]) {
+    return wordMatches[wordMatch[1]];
+  }
+  return undefined;
+}
+
+export function extractSquareFeet(text: string): number | undefined {
+  const normalized = stripHtml(text).toLowerCase();
+  const match = normalized.match(/\b([0-9]{3,4})\s*(?:sq\s*ft|sqft|ft2|square\s*feet|square\s*foot)\b/i);
+  if (match?.[1]) {
+    return Number.parseInt(match[1], 10);
+  }
+  return undefined;
+}
+
+export function extractAmenities(text: string): ListingAmenities {
+  const normalized = stripHtml(text).toLowerCase();
+  return {
+    gym: /\b(gym|fitness|workout|exercise\s*room)\b/i.test(normalized),
+    pool: /\b(pool|swimming)\b/i.test(normalized),
+    laundry: /\b(laundry|washer|dryer|in-suite\s*laundry|in-unit\s*laundry)\b/i.test(normalized),
+    utilitiesIncluded: /\b(utilities\s*included|all\s*inclusive|hydro\s*included|heat\s*included)\b/i.test(normalized),
+    parking: /\b(parking|garage|driveway|parking\s*spot)\b/i.test(normalized),
+    petFriendly: /\b(pet\s*friendly|pets\s*allowed|dogs\s*ok|cats\s*ok|pets\s*welcome)\b/i.test(normalized),
+    furnished: /\b(furnished|fully\s*furnished)\b/i.test(normalized),
+    airConditioning: /\b(air\s*conditioning|a\/c|ac|central\s*air)\b/i.test(normalized),
+    balcony: /\b(balcony|terrace|patio|deck)\b/i.test(normalized),
+  };
 }

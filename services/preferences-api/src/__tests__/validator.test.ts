@@ -75,5 +75,49 @@ describe("validateUpdatePreferencesInput", () => {
       expect(result.errors).toContain("notificationEmail must be a valid email address.");
     }
   });
+
+  it("accepts valid marketplace filters and selectedTransitModes", () => {
+    const result = validateUpdatePreferencesInput({
+      ...validPayload,
+      selectedTransitModes: ["driving", "walking"],
+      minBedrooms: 1,
+      maxBedrooms: 2,
+      minBathrooms: 1.5,
+      minSquareFeet: 500,
+      maxSquareFeet: 1200,
+      hasGym: true,
+      hasPool: false,
+      hasLaundry: true,
+      hasParking: true,
+      petFriendly: true,
+    });
+
+    expect(result.valid).toBe(true);
+    if (result.valid) {
+      expect(result.data.selectedTransitModes).toEqual(["driving", "walking"]);
+      expect(result.data.minBedrooms).toBe(1);
+      expect(result.data.maxBedrooms).toBe(2);
+      expect(result.data.minBathrooms).toBe(1.5);
+      expect(result.data.minSquareFeet).toBe(500);
+      expect(result.data.maxSquareFeet).toBe(1200);
+      expect(result.data.hasGym).toBe(true);
+      expect(result.data.hasPool).toBe(false);
+      expect(result.data.hasLaundry).toBe(true);
+      expect(result.data.hasParking).toBe(true);
+      expect(result.data.petFriendly).toBe(true);
+    }
+  });
+
+  it("rejects invalid transit modes in selectedTransitModes", () => {
+    const result = validateUpdatePreferencesInput({
+      ...validPayload,
+      selectedTransitModes: ["driving", "rocket"],
+    });
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors.some((e) => e.includes("selectedTransitModes must be an array of valid transit modes"))).toBe(true);
+    }
+  });
 });
 

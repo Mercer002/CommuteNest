@@ -134,18 +134,15 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       }
 
       const matches = findMatchingListings(prefs);
-      const deals = matches.filter((m) => m.isGoodDeal);
       const alreadyEmailed = new Set(prefs.emailedListingIds || []);
       // STRICT FILTER: Only email listings that are BOTH good deals AND NEVER PREVIOUSLY EMAILED!
       const newDeals = matches.filter((m) => m.isGoodDeal && !alreadyEmailed.has(m.id));
 
-      if (deals.length === 0) {
       if (newDeals.length === 0) {
         return jsonResponse(200, {
           success: true,
           data: {
             sent: false,
-            message: "No current listings qualify as good deals under these constraints.",
             dealCount: 0,
             message: "No new un-emailed deals found. You're completely up to date!",
           },
@@ -153,7 +150,6 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       }
 
       const destName = prefs.targetDestination.split(",")[0] || prefs.targetDestination;
-      const subject = `🔥 CommuteNest: ${deals.length} Top Deal${deals.length > 1 ? "s" : ""} Found near ${destName}!`;
       const subject = `🔥 CommuteNest: ${newDeals.length} NEW Top Deal${newDeals.length > 1 ? "s" : ""} Found near ${destName}!`;
       const messageLines = [
         `CommuteNest Verified Housing Deals Alert`,
@@ -161,16 +157,13 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         ``,
         `Hello ${userId},`,
         ``,
-        `We identified ${deals.length} verified good deal(s) matching your transit criteria for ${destName}:`,
         `We identified ${newDeals.length} NEW verified good deal(s) matching your transit criteria for ${destName}:`,
         ``,
-        ...deals.map((deal, idx) => [
         ...newDeals.map((deal, idx) => [
           `#${idx + 1}. ${deal.title}`,
           `   Price:   $${deal.priceUsd}/month (${deal.dealReason || "Under budget"})`,
           `   Commute: ${deal.commuteSummary}`,
           `   Address: ${deal.address}`,
-          `   Listing: ${deal.url}`,
           `   Listing URL: ${deal.url}`,
           ``,
         ].join("\n")),
@@ -195,8 +188,6 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         success: true,
         data: {
           sent: true,
-          dealCount: deals.length,
-          message: `Dispatched email alert with ${deals.length} top deal(s) to your registered email!`,
           dealCount: newDeals.length,
           message: `Dispatched email alert with ${newDeals.length} NEW top deal(s) to your registered email!`,
         },
@@ -224,10 +215,25 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
             ? Buffer.from(event.body, "base64").toString("utf-8")
             : event.body;
           const parsed = JSON.parse(rawBody || "{}");
-          if (parsed.maxRentUsd) prefs.maxRentUsd = Number(parsed.maxRentUsd);
-          if (parsed.maxCommuteMinutes) prefs.maxCommuteMinutes = Number(parsed.maxCommuteMinutes);
-          if (parsed.targetDestination) prefs.targetDestination = String(parsed.targetDestination);
-          if (parsed.transitMode) prefs.transitMode = parsed.transitMode;
+          if (parsed.maxRentUsd !== undefined) prefs.maxRentUsd = Number(parsed.maxRentUsd);
+          if (parsed.maxCommuteMinutes !== undefined) prefs.maxCommuteMinutes = Number(parsed.maxCommuteMinutes);
+          if (parsed.targetDestination !== undefined) prefs.targetDestination = String(parsed.targetDestination);
+          if (parsed.transitMode !== undefined) prefs.transitMode = parsed.transitMode;
+          if (parsed.selectedTransitModes !== undefined) prefs.selectedTransitModes = parsed.selectedTransitModes;
+          if (parsed.minBedrooms !== undefined) prefs.minBedrooms = parsed.minBedrooms;
+          if (parsed.maxBedrooms !== undefined) prefs.maxBedrooms = parsed.maxBedrooms;
+          if (parsed.minBathrooms !== undefined) prefs.minBathrooms = parsed.minBathrooms;
+          if (parsed.minSquareFeet !== undefined) prefs.minSquareFeet = parsed.minSquareFeet;
+          if (parsed.maxSquareFeet !== undefined) prefs.maxSquareFeet = parsed.maxSquareFeet;
+          if (parsed.hasGym !== undefined) prefs.hasGym = parsed.hasGym;
+          if (parsed.hasPool !== undefined) prefs.hasPool = parsed.hasPool;
+          if (parsed.hasLaundry !== undefined) prefs.hasLaundry = parsed.hasLaundry;
+          if (parsed.utilitiesIncluded !== undefined) prefs.utilitiesIncluded = parsed.utilitiesIncluded;
+          if (parsed.hasParking !== undefined) prefs.hasParking = parsed.hasParking;
+          if (parsed.petFriendly !== undefined) prefs.petFriendly = parsed.petFriendly;
+          if (parsed.furnished !== undefined) prefs.furnished = parsed.furnished;
+          if (parsed.airConditioning !== undefined) prefs.airConditioning = parsed.airConditioning;
+          if (parsed.hasBalcony !== undefined) prefs.hasBalcony = parsed.hasBalcony;
         } catch {
           // Keep loaded preferences if body cannot be parsed
         }

@@ -75,4 +75,68 @@ describe("listing filters", () => {
     expect(result.isGoodDeal).toBe(false);
     expect(result.reasons).toHaveLength(2);
   });
+
+  it("filters by marketplace options: bedrooms, bathrooms, sqft, and amenities", () => {
+    const richListing: Listing = {
+      ...listing,
+      bedrooms: 1,
+      bathrooms: 1,
+      squareFeet: 550,
+      amenities: { gym: false, pool: false, laundry: true },
+    };
+
+    // Requires 2 bedrooms -> should fail
+    const resBed = evaluateListing(richListing, commute, { ...preferences, minBedrooms: 2 });
+    expect(resBed.matches).toBe(false);
+    expect(resBed.reasons[0]).toContain("bedrooms");
+
+    // Requires gym -> should fail
+    const resGym = evaluateListing(richListing, commute, { ...preferences, hasGym: true });
+    expect(resGym.matches).toBe(false);
+    expect(resGym.reasons[0]).toContain("gym");
+
+    // Requires min 600 sq ft -> should fail
+    const resSqft = evaluateListing(richListing, commute, { ...preferences, minSquareFeet: 600 });
+    expect(resSqft.matches).toBe(false);
+    expect(resSqft.reasons[0]).toContain("square feet");
+
+    // Matching criteria (laundry: true, minBedrooms: 1, maxBedrooms: 2) -> passes
+    const resPass = evaluateListing(richListing, commute, {
+      ...preferences,
+      minBedrooms: 1,
+      maxBedrooms: 2,
+      minBathrooms: 1,
+      hasLaundry: true,
+    });
+    expect(resPass.matches).toBe(true);
+  });
+
+  it("enforces multi-modal commute constraints across all selected modes", () => {
+    const multiCommute: CommuteResult = {
+      ...commute,
+      durationMinutes: 15,
+      breakdown: {
+        transit: 15,
+        driving: 10,
+        walking: 45,
+      },
+    };
+
+    // Walking AND driving selected, maxCommuteMinutes: 30 -> walking 45 exceeds 30
+    const resFail = evaluateListing(listing, multiCommute, {
+      ...preferences,
+      maxCommuteMinutes: 30,
+      selectedTransitModes: ["driving", "walking"],
+    });
+    expect(resFail.matches).toBe(false);
+    expect(resFail.reasons[0]).toContain("walking commute 45 min exceeds 30 min");
+
+    // Driving AND transit selected, maxCommuteMinutes: 30 -> both <= 30
+    const resPass = evaluateListing(listing, multiCommute, {
+      ...preferences,
+      maxCommuteMinutes: 30,
+      selectedTransitModes: ["driving", "transit"],
+    });
+    expect(resPass.matches).toBe(true);
+  });
 });

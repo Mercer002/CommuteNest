@@ -26,6 +26,66 @@ export function evaluateListing(
     reasons.push(`commute ${commute.durationMinutes} min exceeds ${preferences.maxCommuteMinutes} min`);
   }
 
+  // Optional multi-modal breakdown check
+  if (commute.breakdown) {
+    const activeModes = preferences.selectedTransitModes && preferences.selectedTransitModes.length > 0
+      ? preferences.selectedTransitModes
+      : [preferences.transitMode];
+
+    for (const mode of activeModes) {
+      const duration = commute.breakdown[mode];
+      if (duration !== undefined && duration > preferences.maxCommuteMinutes) {
+        reasons.push(`${mode} commute ${duration} min exceeds ${preferences.maxCommuteMinutes} min`);
+      }
+    }
+  }
+
+  // Optional marketplace filters
+  if (preferences.minBedrooms !== undefined && (listing.bedrooms ?? 0) < preferences.minBedrooms) {
+    reasons.push(`bedrooms ${listing.bedrooms ?? 0} below minimum ${preferences.minBedrooms}`);
+  }
+  if (preferences.maxBedrooms !== undefined && (listing.bedrooms ?? 0) > preferences.maxBedrooms) {
+    reasons.push(`bedrooms ${listing.bedrooms ?? 0} exceeds maximum ${preferences.maxBedrooms}`);
+  }
+  if (preferences.minBathrooms !== undefined && (listing.bathrooms ?? 0) < preferences.minBathrooms) {
+    reasons.push(`bathrooms ${listing.bathrooms ?? 0} below minimum ${preferences.minBathrooms}`);
+  }
+  if (preferences.minSquareFeet !== undefined && (listing.squareFeet ?? 0) < preferences.minSquareFeet) {
+    reasons.push(`square feet ${listing.squareFeet ?? 0} below minimum ${preferences.minSquareFeet}`);
+  }
+  if (preferences.maxSquareFeet !== undefined && (listing.squareFeet ?? 0) > preferences.maxSquareFeet) {
+    reasons.push(`square feet ${listing.squareFeet ?? 0} exceeds maximum ${preferences.maxSquareFeet}`);
+  }
+
+  // Optional amenity checks
+  if (preferences.hasGym && !listing.amenities?.gym) {
+    reasons.push("lacks gym in building");
+  }
+  if (preferences.hasPool && !listing.amenities?.pool) {
+    reasons.push("lacks swimming pool");
+  }
+  if (preferences.hasLaundry && !listing.amenities?.laundry) {
+    reasons.push("lacks laundry");
+  }
+  if (preferences.utilitiesIncluded && !listing.amenities?.utilitiesIncluded) {
+    reasons.push("utilities not included");
+  }
+  if (preferences.hasParking && !listing.amenities?.parking) {
+    reasons.push("lacks parking");
+  }
+  if (preferences.petFriendly && !listing.amenities?.petFriendly) {
+    reasons.push("not pet friendly");
+  }
+  if (preferences.furnished && !listing.amenities?.furnished) {
+    reasons.push("not furnished");
+  }
+  if (preferences.airConditioning && !listing.amenities?.airConditioning) {
+    reasons.push("lacks air conditioning");
+  }
+  if (preferences.hasBalcony && !listing.amenities?.balcony) {
+    reasons.push("lacks balcony");
+  }
+
   const matches = reasons.length === 0;
   let isGoodDeal = false;
   let dealReason: string | undefined;

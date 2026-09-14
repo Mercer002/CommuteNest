@@ -1,6 +1,7 @@
 import type { APIGatewayProxyEventV2 } from "aws-lambda";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handler, setRepository, setSnsClient } from "../handler.js";
+import { CANDIDATE_LISTINGS } from "../matcher.js";
 import { PreferencesRepository } from "../repository.js";
 
 describe("API Gateway Handler", () => {
@@ -145,7 +146,6 @@ describe("API Gateway Handler", () => {
         target_destination: "Union Station, Toronto, ON",
         transit_mode: "transit",
       },
-    });
     }).mockResolvedValueOnce({});
 
     const event = createEvent("POST", "/preferences/mercer/email-deals");
@@ -170,16 +170,7 @@ describe("API Gateway Handler", () => {
         max_commute_minutes: 30,
         target_destination: "Union Station, Toronto, ON",
         transit_mode: "transit",
-        emailed_listing_ids: [
-          "craigslist-toronto-jarvis-suite",
-          "craigslist-annex-bloor-spadina",
-          "craigslist-dufferin-grove-2br",
-          "craigslist-danforth-birchmount",
-          "craigslist-north-york-sheppard",
-          "craigslist-midtown-yonge-2br",
-          "craigslist-waterfront-1br-den",
-          "craigslist-dundas-east-grid-condo",
-        ],
+        emailed_listing_ids: CANDIDATE_LISTINGS.map((c) => c.id),
       },
     });
 

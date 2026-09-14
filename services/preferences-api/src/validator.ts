@@ -72,6 +72,64 @@ export function validateUpdatePreferencesInput(input: unknown): ValidationResult
     }
   }
 
+  // Selected transit modes (optional multi-modal support)
+  let selectedTransitModes: TransitMode[] | undefined = undefined;
+  if (obj.selectedTransitModes !== undefined && obj.selectedTransitModes !== null) {
+    if (
+      !Array.isArray(obj.selectedTransitModes) ||
+      obj.selectedTransitModes.some((m) => typeof m !== "string" || !VALID_TRANSIT_MODES.includes(m.toLowerCase() as TransitMode))
+    ) {
+      errors.push(`selectedTransitModes must be an array of valid transit modes: ${VALID_TRANSIT_MODES.join(", ")}.`);
+    } else {
+      selectedTransitModes = Array.from(
+        new Set(obj.selectedTransitModes.map((m) => m.toLowerCase() as TransitMode)),
+      );
+    }
+  }
+
+  // Marketplace optional numbers
+  const parseOptionalInt = (key: string, min: number, max: number): number | undefined => {
+    if (obj[key] === undefined || obj[key] === null || obj[key] === "") return undefined;
+    const num = Number(obj[key]);
+    if (!Number.isFinite(num) || num < min || num > max) {
+      errors.push(`${key} must be a number between ${min} and ${max}.`);
+      return undefined;
+    }
+    return Math.floor(num);
+  };
+
+  const parseOptionalFloat = (key: string, min: number, max: number): number | undefined => {
+    if (obj[key] === undefined || obj[key] === null || obj[key] === "") return undefined;
+    const num = Number(obj[key]);
+    if (!Number.isFinite(num) || num < min || num > max) {
+      errors.push(`${key} must be a number between ${min} and ${max}.`);
+      return undefined;
+    }
+    return num;
+  };
+
+  const minBedrooms = parseOptionalInt("minBedrooms", 0, 10);
+  const maxBedrooms = parseOptionalInt("maxBedrooms", 0, 10);
+  const minBathrooms = parseOptionalFloat("minBathrooms", 0, 10);
+  const minSquareFeet = parseOptionalInt("minSquareFeet", 0, 20000);
+  const maxSquareFeet = parseOptionalInt("maxSquareFeet", 0, 20000);
+
+  // Amenity boolean flags
+  const parseOptionalBool = (key: string): boolean | undefined => {
+    if (obj[key] === undefined || obj[key] === null || obj[key] === "") return undefined;
+    return Boolean(obj[key]);
+  };
+
+  const hasGym = parseOptionalBool("hasGym");
+  const hasPool = parseOptionalBool("hasPool");
+  const hasLaundry = parseOptionalBool("hasLaundry");
+  const utilitiesIncluded = parseOptionalBool("utilitiesIncluded");
+  const hasParking = parseOptionalBool("hasParking");
+  const petFriendly = parseOptionalBool("petFriendly");
+  const furnished = parseOptionalBool("furnished");
+  const airConditioning = parseOptionalBool("airConditioning");
+  const hasBalcony = parseOptionalBool("hasBalcony");
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
@@ -84,6 +142,21 @@ export function validateUpdatePreferencesInput(input: unknown): ValidationResult
       targetDestination,
       transitMode,
       transitModes,
+      selectedTransitModes,
+      minBedrooms,
+      maxBedrooms,
+      minBathrooms,
+      minSquareFeet,
+      maxSquareFeet,
+      hasGym,
+      hasPool,
+      hasLaundry,
+      utilitiesIncluded,
+      hasParking,
+      petFriendly,
+      furnished,
+      airConditioning,
+      hasBalcony,
       notificationEmail,
     },
   };

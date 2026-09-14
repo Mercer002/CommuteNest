@@ -28,4 +28,42 @@ describe("listing normalizer", () => {
     });
     expect(listing?.id).toHaveLength(24);
   });
+
+  it("extracts bedrooms, bathrooms, sqft, and amenities from text", () => {
+    const listing = normalizeRawListing({
+      sourceName: "test-feed",
+      externalId: "lux-123",
+      title: "$2,200 Luxury 2 Bedroom 1.5 Bath Condo with Balcony",
+      url: "https://example.test/lux-123",
+      description: "Address: 200 Bay Street, Toronto, ON. 850 sq ft suite with gym, pool, washer/dryer in-unit, parking spot, and air conditioning. All inclusive utilities.",
+    });
+
+    expect(listing?.bedrooms).toBe(2);
+    expect(listing?.bathrooms).toBe(1.5);
+    expect(listing?.squareFeet).toBe(850);
+    expect(listing?.amenities).toMatchObject({
+      gym: true,
+      pool: true,
+      laundry: true,
+      parking: true,
+      airConditioning: true,
+      balcony: true,
+      utilitiesIncluded: true,
+    });
+  });
+
+  it("handles studio apartments as 0 bedrooms", () => {
+    const listing = normalizeRawListing({
+      sourceName: "test-feed",
+      externalId: "studio-99",
+      title: "$1,400 Modern Studio Apartment",
+      url: "https://example.test/studio-99",
+      description: "Address: 50 Spadina Ave, Toronto, ON. 450 sqft bachelor suite, pet friendly.",
+    });
+
+    expect(listing?.bedrooms).toBe(0);
+    expect(listing?.squareFeet).toBe(450);
+    expect(listing?.amenities?.petFriendly).toBe(true);
+  });
 });
+

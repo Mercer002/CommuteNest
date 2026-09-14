@@ -2,12 +2,39 @@ export type ListingSourceKind = "rss";
 export type DistanceProvider = "google" | "mock";
 export type TransitMode = "transit" | "driving" | "walking" | "bicycling";
 
+export interface ListingAmenities {
+  gym?: boolean;
+  pool?: boolean;
+  laundry?: boolean;
+  utilitiesIncluded?: boolean;
+  parking?: boolean;
+  petFriendly?: boolean;
+  furnished?: boolean;
+  airConditioning?: boolean;
+  balcony?: boolean;
+}
+
 export interface UserPreferences {
   maxRentUsd: number;
   maxCommuteMinutes: number;
   targetDestination: string;
   transitMode: TransitMode;
   transitModes: string[];
+  selectedTransitModes?: TransitMode[];
+  minBedrooms?: number;
+  maxBedrooms?: number;
+  minBathrooms?: number;
+  minSquareFeet?: number;
+  maxSquareFeet?: number;
+  hasGym?: boolean;
+  hasPool?: boolean;
+  hasLaundry?: boolean;
+  utilitiesIncluded?: boolean;
+  hasParking?: boolean;
+  petFriendly?: boolean;
+  furnished?: boolean;
+  airConditioning?: boolean;
+  hasBalcony?: boolean;
 }
 
 export interface RawListing {
@@ -19,6 +46,10 @@ export interface RawListing {
   publishedAt?: string;
   address?: string;
   priceUsd?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  squareFeet?: number;
+  amenities?: ListingAmenities;
 }
 
 export interface Listing {
@@ -30,6 +61,10 @@ export interface Listing {
   publishedAt?: string;
   address: string;
   priceUsd: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  squareFeet?: number;
+  amenities?: ListingAmenities;
 }
 
 export interface CommuteOptions {
@@ -45,11 +80,13 @@ export interface CommuteResult {
   distanceMeters?: number;
   distanceText?: string;
   provider: DistanceProvider;
+  breakdown?: Record<string, number>;
 }
 
 export interface MatchedListing {
   listing: Listing;
   commute: CommuteResult;
+  commuteBreakdown?: Record<string, number>;
   isGoodDeal?: boolean;
   dealReason?: string;
 }

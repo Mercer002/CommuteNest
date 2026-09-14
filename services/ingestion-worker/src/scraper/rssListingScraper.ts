@@ -49,6 +49,9 @@ function rssItemToRawListing(item: XmlNode, sourceName: string): RawListing {
     publishedAt: scalar(item.pubDate ?? item.updated ?? item.published),
     address: scalar(item.address ?? item.location),
     priceUsd: priceValue ? parseRentUsd(`$${priceValue}`) ?? Number.parseInt(priceValue, 10) : undefined,
+    bedrooms: scalar(item.bedrooms) !== undefined ? Number(scalar(item.bedrooms)) : undefined,
+    bathrooms: scalar(item.bathrooms) !== undefined ? Number(scalar(item.bathrooms)) : undefined,
+    squareFeet: scalar(item.sqft ?? item.squareFeet) !== undefined ? Number(scalar(item.sqft ?? item.squareFeet)) : undefined,
   };
 }
 

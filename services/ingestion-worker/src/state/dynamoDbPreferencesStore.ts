@@ -1,6 +1,4 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-import type { UserPreferences } from "../types.js";
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { MatchedListing, UserPreferences } from "../types.js";
 
@@ -33,7 +31,7 @@ export class DynamoDbPreferencesStore {
     }
   }
 
-  async loadUserPreferences(userId: string): Promise<UserPreferences | null> {
+  async getPreferences(userId: string): Promise<UserPreferences | null> {
     const response = await this.docClient.send(
       new GetCommand({
         TableName: this.tableName,
@@ -54,18 +52,45 @@ export class DynamoDbPreferencesStore {
       targetDestination: String(item.target_destination),
       transitMode: item.transit_mode,
       transitModes: item.transit_modes ?? ["bus", "subway", "train"],
+      selectedTransitModes: item.selected_transit_modes,
+      minBedrooms: item.min_bedrooms,
+      maxBedrooms: item.max_bedrooms,
+      minBathrooms: item.min_bathrooms,
+      minSquareFeet: item.min_square_feet,
+      maxSquareFeet: item.max_square_feet,
+      hasGym: item.has_gym,
+      hasPool: item.has_pool,
+      hasLaundry: item.has_laundry,
+      utilitiesIncluded: item.utilities_included,
+      hasParking: item.has_parking,
+      petFriendly: item.pet_friendly,
+      furnished: item.furnished,
+      airConditioning: item.air_conditioning,
+      hasBalcony: item.has_balcony,
     };
+  }
+
+  async loadUserPreferences(userId: string): Promise<UserPreferences | null> {
+    return this.getPreferences(userId);
   }
 
   async saveRecentMatches(userId: string, matches: MatchedListing[]): Promise<void> {
     const formattedMatches = matches.slice(0, 25).map((m) => ({
       id: m.listing.id,
+      sourceName: m.listing.sourceName,
       title: m.listing.title,
       priceUsd: m.listing.priceUsd,
       address: m.listing.address,
       url: m.listing.url,
+      bedrooms: m.listing.bedrooms,
+      bathrooms: m.listing.bathrooms,
+      squareFeet: m.listing.squareFeet,
+      amenities: m.listing.amenities,
       commuteMinutes: m.commute.durationMinutes,
       commuteSummary: m.commute.distanceText || `${m.commute.durationMinutes} mins`,
+      commuteBreakdown: m.commute.breakdown,
+      isGoodDeal: m.isGoodDeal,
+      dealReason: m.dealReason,
       matchedAt: new Date().toISOString(),
     }));
 
@@ -84,4 +109,3 @@ export class DynamoDbPreferencesStore {
     );
   }
 }
-
