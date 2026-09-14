@@ -1,7 +1,7 @@
 import type { Listing, ListingScraper } from "../types.js";
 
 export class CompositeListingScraper implements ListingScraper {
-  constructor(private readonly scrapers: ListingScraper[]) {}
+  constructor(private readonly scrapers: ListingScraper[]) { }
 
   async scrape(): Promise<Listing[]> {
     const results = await Promise.allSettled(
@@ -27,3 +27,4 @@ export class CompositeListingScraper implements ListingScraper {
     return allListings;
   }
 }
+

@@ -184,7 +184,7 @@ export function App() {
         } else {
           triggerScan(targetUser, data)
             .then((res) => setMatchedListings(res.matches))
-            .catch(() => {});
+            .catch(() => { });
         }
       } else {
         setLastSavedRecord(null);
@@ -223,9 +223,9 @@ export function App() {
       const result = await sendDealsEmail(activeUserId);
       setEmailSuccessMessage(
         result.message ||
-          (result.sent
-            ? "Dispatched new top deal(s) to your verified email!"
-            : "All top deals have already been emailed. You are up to date!"),
+        (result.sent
+          ? "Dispatched new top deal(s) to your verified email!"
+          : "All top deals have already been emailed. You are up to date!"),
       );
       setTimeout(() => setEmailSuccessMessage(null), 6000);
     } catch (err) {
@@ -251,7 +251,7 @@ export function App() {
       // Refresh matched listings with new criteria
       triggerScan(activeUserId, params)
         .then((res) => setMatchedListings(res.matches))
-        .catch(() => {});
+        .catch(() => { });
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to save preferences");
     } finally {
@@ -443,11 +443,10 @@ export function App() {
                         key={preset}
                         type="button"
                         onClick={() => setTargetDestination(preset)}
-                        className={`text-xs px-2.5 py-0.5 rounded-full border transition ${
-                          targetDestination === preset
+                        className={`text-xs px-2.5 py-0.5 rounded-full border transition ${targetDestination === preset
                             ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium"
                             : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                        }`}
+                          }`}
                       >
                         {preset.split(",")[0]}
                       </button>
@@ -507,11 +506,10 @@ export function App() {
                           key={id}
                           type="button"
                           onClick={() => toggleTransitMode(id as TransitMode)}
-                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-1 transition relative ${
-                            isSelected
+                          className={`p-2.5 rounded-xl border flex flex-col items-center justify-center space-y-1 transition relative ${isSelected
                               ? "bg-indigo-50 border-indigo-400 text-indigo-700 shadow-sm"
                               : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           {isSelected && (
                             <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[9px]">
@@ -638,11 +636,10 @@ export function App() {
                                   setMinBedrooms(opt.min);
                                   setMaxBedrooms(opt.max);
                                 }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
-                                  isSelected
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${isSelected
                                     ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                                }`}
+                                  }`}
                               >
                                 {opt.label}
                               </button>
@@ -670,11 +667,10 @@ export function App() {
                                 key={opt.label}
                                 type="button"
                                 onClick={() => setMinBathrooms(opt.val)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
-                                  isSelected
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${isSelected
                                     ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                                }`}
+                                  }`}
                               >
                                 {opt.label}
                               </button>
@@ -736,11 +732,10 @@ export function App() {
                               key={label}
                               type="button"
                               onClick={() => set(!state)}
-                              className={`p-2 rounded-xl text-left border flex items-center space-x-2 transition ${
-                                state
+                              className={`p-2 rounded-xl text-left border flex items-center space-x-2 transition ${state
                                   ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold shadow-xs"
                                   : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                              }`}
+                                }`}
                             >
                               <Icon className={`w-3.5 h-3.5 shrink-0 ${state ? "text-indigo-600" : "text-slate-400"}`} />
                               <span className="text-[11px] truncate">{label}</span>
@@ -862,19 +857,18 @@ export function App() {
                       sourceName.toLowerCase().includes("kijiji")
                         ? "bg-amber-50 text-amber-700 border-amber-200"
                         : sourceName.toLowerCase().includes("padmapper") || sourceName.toLowerCase().includes("syndication")
-                        ? "bg-sky-50 text-sky-700 border-sky-200"
-                        : sourceName.toLowerCase().includes("toronto rentals")
-                        ? "bg-teal-50 text-teal-700 border-teal-200"
-                        : "bg-purple-50 text-purple-700 border-purple-200";
+                          ? "bg-sky-50 text-sky-700 border-sky-200"
+                          : sourceName.toLowerCase().includes("toronto rentals")
+                            ? "bg-teal-50 text-teal-700 border-teal-200"
+                            : "bg-purple-50 text-purple-700 border-purple-200";
 
                     return (
                       <div
                         key={listing.id}
-                        className={`p-4 rounded-2xl border transition-all ${
-                          listing.isGoodDeal
+                        className={`p-4 rounded-2xl border transition-all ${listing.isGoodDeal
                             ? "border-amber-200 bg-amber-50/20 shadow-sm hover:border-amber-300 hover:shadow"
                             : "border-slate-200 bg-white shadow-xs hover:border-slate-300"
-                        }`}
+                          }`}
                       >
                         {/* Badges row */}
                         <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
@@ -915,8 +909,8 @@ export function App() {
                               {listing.bedrooms === 0
                                 ? "Studio"
                                 : listing.bedrooms !== undefined
-                                ? `${listing.bedrooms} Bed`
-                                : "Studio/1BR"}
+                                  ? `${listing.bedrooms} Bed`
+                                  : "Studio/1BR"}
                             </span>
                           </span>
                           <span>•</span>

@@ -76,3 +76,4 @@ describe("CompositeListingScraper", () => {
     expect(results[0].title).toBe("Healthy Listing");
   });
 });
+
