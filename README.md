@@ -161,7 +161,24 @@ CommuteNest is architected strictly within the perpetual and 12-month AWS Free T
 
 ---
 
-## Tech Stack & Project Structure
+## Tech Stack
+
+| Layer / Domain | Technologies | Description & Role |
+| :--- | :--- | :--- |
+| **Frontend UI** | **React 18**, **TypeScript 5.7**, **Vite**, **Tailwind CSS** | Single-Page Application (SPA) with responsive Facebook Marketplace-style filters, multi-modal selectors, and Lucide icons. |
+| **Serverless Compute** | **AWS Lambda** (Node.js 20 / ARM64), **AWS EventBridge** | Event-driven microservices running on AWS Graviton with sub-300ms cold starts and scheduled cron ingestion triggers. |
+| **API & Gateway** | **Amazon API Gateway** (HTTP API v2) | High-performance, low-latency REST API with CORS support, path proxying, and global health checks. |
+| **Database & State** | **Amazon DynamoDB** | Fully managed NoSQL store in On-Demand mode (`PAY_PER_REQUEST`), native 14-day epoch TTL, and conditional write deduplication. |
+| **Messaging & Alerts** | **Amazon SNS** | Encrypted notification topic for real-time email push delivery of verified good deals. |
+| **Hosting & Edge CDN** | **Amazon S3**, **Amazon CloudFront** | Fully private static website hosting with Origin Access Control (OAC SigV4), custom error response SPA routing, and global edge caching. |
+| **Scraping & NLP** | **Fast-XML-Parser**, **Regex NLP Extractors** | Multi-source public aggregator (Craigslist, Kijiji, PadMapper syndication) with URL deduplication and text entity extraction. |
+| **Infrastructure as Code** | **Terraform 1.16** | Fully automated declarative cloud provisioning divided into 6 reusable modules (`api`, `compute`, `database`, `frontend`, `iam`, `notifications`). |
+| **Build & Packaging** | **esbuild**, **npm Workspaces** | Monorepo architecture with lightweight Lambda bundle compilation (< 30 KB zip files with zero runtime `node_modules` overhead). |
+| **Testing & Quality** | **Vitest 4**, **GitHub Actions** | Comprehensive suite of **81 unit & integration tests**, automated static typechecking, and continuous integration workflows. |
+
+---
+
+## Project Structure
 
 ```text
 CommuteNest/
